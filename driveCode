@@ -1,32 +1,10 @@
 /*
 
- MSE 2202 MSEBot Robot code
+ MSE 2202 Milestone 3 Code
 
  */
 
-//  To program and use ESP32-S3
-//   
-//  Tools->:
-//  Board: "Adafruit Feather ESP32-S3 No PSRAM"
-//  Upload Speed: "921600"
-//  USB CDC On Boot: "Enabled"
-//  USB Firmware MSC on Boot: "Disabled"
-//  USB DFU On Bot: "Disabled"
-//  Upload Mode:"UART0/Hardware CDC"
-//  SPU Frequency: "240MHz (WiFi)"
-//  Flash Mode: "QIO 80MHz"
-//  Flash SIze: "4MB (32Mb)"
-//  Partition Scheme: "Default 4MB with spiffs (1.2MB app/1.5MB SPIFFS)"
-//  Core Debug Level: "Verbose"
-//  PSRAM: 'Disabled"
-//  Arduino Runs On: "Core 1"
-//  Events Run On: "Core 1"
-//
-//  To program, press and hold the reset button then press and hold program button, release the reset button then 
-//  release the program button 
-//
 
-// Uncomment keywords to enable debugging output
 #define DEBUG_DRIVE_SPEED    1
 #define DEBUG_ENCODER_COUNT  1
 
@@ -208,11 +186,7 @@ void loop()
       // modes 
       // 0 = Default after power up/reset. Robot is stopped.
       // 1 = Press mode button once to enter.        Run robot
-      // 2 = Press mode button twice to enter.       Add your code to do something 
-      // 3 = Press mode button three times to enter. Add your code to do something 
-      // 4 = Press mode button four times to enter.  Add your code to do something 
-      // 5 = Press mode button five times to enter.  Add your code to do something 
-      // 6 = Press mode button six times to enter.   Add your code to do something 
+
       switch(robotModeIndex) {
          case 0: // Robot stopped
             setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);                          // stop left motor
