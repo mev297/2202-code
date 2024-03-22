@@ -1,3 +1,32 @@
+/*
+
+ MSE 2202 MSEBot Robot code
+
+ */
+
+//  To program and use ESP32-S3
+//   
+//  Tools->:
+//  Board: "Adafruit Feather ESP32-S3 No PSRAM"
+//  Upload Speed: "921600"
+//  USB CDC On Boot: "Enabled"
+//  USB Firmware MSC on Boot: "Disabled"
+//  USB DFU On Bot: "Disabled"
+//  Upload Mode:"UART0/Hardware CDC"
+//  SPU Frequency: "240MHz (WiFi)"
+//  Flash Mode: "QIO 80MHz"
+//  Flash SIze: "4MB (32Mb)"
+//  Partition Scheme: "Default 4MB with spiffs (1.2MB app/1.5MB SPIFFS)"
+//  Core Debug Level: "Verbose"
+//  PSRAM: 'Disabled"
+//  Arduino Runs On: "Core 1"
+//  Events Run On: "Core 1"
+//
+//  To program, press and hold the reset button then press and hold program button, release the reset button then 
+//  release the program button 
+//
+
+// Uncomment keywords to enable debugging output
 #define DEBUG_DRIVE_SPEED    1
 #define DEBUG_ENCODER_COUNT  1
 
@@ -31,10 +60,6 @@ struct Encoder {
 #define SMART_LED_COUNT     1                                                  // number of SMART LEDs in use
 
 // Constants
-const float cir = 9.4;                                                         //circumfrence of th wheel 
-const int cCountsRev = 1096;                                                   // encoder pulses per motor revolution
-const int forward50 = cCountsRev*(50/cir);                                     //variable to make the bot go forward for 50
-const int backward25 = cCountsRev*(25/cir);                                    //variable for going back for 25
 const int cDisplayUpdate = 100;                                                // update interval for Smart LED in milliseconds
 const int cNumMotors = 2;                                                      // number of DC motors
 const int cIN1Pin[] = {LEFT_MOTOR_A, RIGHT_MOTOR_A};                           // GPIO pin(s) for INT1
@@ -45,16 +70,12 @@ const int cPWMRes = 8;                                                         /
 const int cMinPWM = 150;                                                       // PWM value for minimum speed that turns motor
 const int cMaxPWM = pow(2, cPWMRes) - 1;                                       // PWM value for maximum speed
 const int cPWMFreq = 20000;                                                    // frequency of PWM signal
-
-
-
+const int cCountsRev = 1096;                                                   // encoder pulses per motor revolution
 
 // Variables
-
 boolean motorsEnabled = true;                                                  // motors enabled flag
 boolean timeUp3sec = false;                                                    // 3 second timer elapsed flag
 boolean timeUp2sec = false;                                                    // 2 second timer elapsed flag
-unsigned long cTime = 0;                                                       //variable for the current time
 unsigned char driveSpeed;                                                      // motor drive speed (0-255)
 unsigned char driveIndex;                                                      // state index for run mode
 unsigned int  modePBDebounce;                                                  // pushbutton debounce timer count
@@ -203,10 +224,9 @@ void loop()
             break;
 
          case 1: // Run robot
-            if (timeUp2sec) {                                                  // pause for 2 sec before running case 1 code
+            if (timeUp3sec) {                                                  // pause for 3 sec before running case 1 code
                // Read pot to update drive motor speed
                pot = analogRead(POT_R1);
-               //sets the drive speed through mapping
                driveSpeed = map(pot, 0, 4095, cMinPWM, cMaxPWM);
 #ifdef DEBUG_DRIVE_SPEED 
                Serial.print(F("Drive Speed: Pot R1 = "));
@@ -221,7 +241,8 @@ void loop()
                Serial.println(pos[1]);
 #endif
                if (motorsEnabled) {                                            // run motors only if enabled
-                                                        // reset 2 second timer
+                  if (timeUp2sec) {                                            // update drive state after 2 seconds
+                     timeUp2sec = false;                                       // reset 2 second timer
                      switch(driveIndex) {                                      // cycle through drive states
                         case 0: // Stop
                            setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);           // stop left motor
@@ -230,70 +251,73 @@ void loop()
                            break;
 
                         case 1: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
-                         //checks position of encoder 
-                          if (encoder[1].pos <= forward50) {
-                        setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward, 1 means forward rotation
-                        setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left), -1 means reverse rotation
-                        Serial.println(encoder[1].pos);
-                    } else {
-                        driveIndex = 2;                                     // goes to next state: drive backward
-                    }
-                    break;
-
-                        case 2: // Drive backward — motors spin in opposite directions as they are opposed by 180 degrees
-                          if (encoder[1].pos >= backward25) {
-                        setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse, opposite from forward case 
-                        setMotor(1, driveSpeed, cIN1Chan[1], cIN2Chan[1]);  // right motor forward (opposite dir from right)
-                        Serial.println(encoder[1].pos);
-                    } else {
-                        cTime = millis();
-                        driveIndex = 3;                                     // next state: turn left
-                    }
-                    break;
-                            
-                            
-
-                        case 3: // Turn left (counterclockwise) - motors spin in same direction
-                           if(millis() - cTime < 2000){
-                            setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor
-                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor
-                            
-                           } else{
-                            setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]); // left motor
-                            setMotor(0, 0, cIN1Chan[1], cIN2Chan[1]); // right motor
-                            driveIndex = 4;                           //next state: turn right
-                            cTime = millis(); //reset timer for the next state
-                           }
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 2;                                     // next state: drive forward
                            break;
-                           
 
-                        case 4: // Turn right (clockwise) — motors spin in same direction
-                           if (millis() - cTime < 2000) { // turn for 2 seconds
-                              setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor forward
-                              setMotor(1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor forward
-                          } else {
-                              setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]); // stop left motor
-                              setMotor(0, 0, cIN1Chan[1], cIN2Chan[1]); // stop right motor
-                              driveIndex = 5; // next state: stopping
-                              cTime = millis(); // reset timer for the next state
-                          }
-                          break;
+                        case 2: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 3;                                     // next state: turn right
+                           break;
+
+                        case 3: // Turn right 90 degrees 
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 4;                                     // next state: drive forward
+                           break;
+
+                        case 4: // Drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 5;                                     // next state: turn right 
+                           break;
+
+                        case 5: // Turn right
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 6;                                     // next state: drive forward
+                           break;
                         
-                        case 5:
-                        //stop the motors
-                          setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);
-                          setMotor(0, 0, cIN1Chan[1], cIN2Chan[1]);
-                          robotModeIndex = 0;
+                        case 6: // drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 7;                                     // next state: drive forward
+                           break;
+                        
+                        case 7: // drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 8;                                     // next state: turn right 
+                           break;
+                        
+                        case 8: // turn right
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 9;                                     // next state: drive forward
+                           break;
+
+                        case 9: // drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 10;                                     // next state: turn right
+                           break;
+                        
+                        case 10: // turn right
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 0;                                     // next state: stop
+                           break;
                      }
                   }
-            } 
-            
+               }
+            }
             else {                                                            // stop when motors are disabled
                setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);                      // stop left motor
                setMotor(0, 0, cIN1Chan[1], cIN2Chan[1]);                      // stop right motor
             }
             break;
-
       }
       // Update brightness of heartbeat display on SmartLED
       displayTime++;                                                          // count milliseconds
@@ -345,3 +369,5 @@ void ARDUINO_ISR_ATTR encoderISR(void* arg) {
       s->pos--;                                                              // decrease position
    }
 }
+
+
