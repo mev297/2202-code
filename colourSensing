@@ -78,6 +78,7 @@ void setup() {
 }
 
 void loop() {
+
   uint16_t r, g, b, c;                                // RGBC values from TCS34725
   
   digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));    // turn on onboard LED if switch state is low (on position)
