@@ -7,7 +7,8 @@
 #include <SPI.h>
 #include "Adafruit_TCS34725.h"
 
-Servo myservo;  // create servo object to control a servo
+Servo myservo1;  // create servo object to control a servo
+Servo myservo2; 
 // twelve servo objects can be created on most boards
 
 int pos = 0;    // variable to store the servo position
