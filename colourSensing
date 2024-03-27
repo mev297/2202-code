@@ -21,7 +21,8 @@
 void doHeartbeat();
 void ARDUINO_ISR_ATTR buttonISR(void* arg);
 void ARDUINO_ISR_ATTR timerISR();
-
+void calibrate();
+void degreesToDutyCycle(int);
 // Button structure
 struct Button {
   const int pin;                                       // GPIO pin for button
@@ -46,7 +47,9 @@ const int cDirPin            = 39;                     // GPIO pin for direction
 const int cStepRes           = 8;                      // bit resolution for stepper PWM stepper
 const int cStepFreq          = 100;                    // initial frequency of stepper PWM
 const long cDebounceDelay    = 20;                     // button debounce delay in milliseconds
-int pos                      = 0;                      //stores the position of the servo
+int servoPos1                = 0;                      //stores the position of servo 1
+int servoPos2                = 0;                      //stores the position of servo 2
+
 // Variables
 boolean heartbeatState       = true;                  // state of heartbeat LED
 unsigned int robotIndex      = 0;
@@ -109,12 +112,16 @@ void loop() {
       break;
 
     case 2: //rotate arm down with servo 1
+      servoPos1 = 0; //CHANGE THIS NUMBER BASED ON TESTING
+      ledcWrite(cServoChannel, degreesToDutyCycle(servoPos1));
       break;
 
     case 3: //stepper rotates 1.5 rev
       break;
 
     case 4: //arm goes back up using servo 1
+      servoPos1 = 150; //CHANGE THIS NUMBER BASED ON TESTING
+      ledcWrite(cServoChannel, degreesToDutyCycle(servoPos1));
       break;
     
     case 5: //servo 2 rotates and brings arm to edge of base
@@ -130,4 +137,26 @@ void loop() {
       break;
 
   }
+}
+
+void calibrate(){
+  while(limitSwitch2.pressed == false){
+    //move motor until it hits first switch
+@@ -372,6 +376,7 @@ void calibrate(){
+  digitalWrite(LED2,0);
+  checkLimSwitchStatus();
+}
+//Code from exercise 5
+// Converts servo position in degrees into the required duty cycle for an RC servo motor control signal 
+// assuming 14-bit resolution (i.e., value represented as fraction of 16383). 
+// Note that the constants for minimum and maximum duty cycle may need to be adjusted for a specific motor
+long degreesToDutyCycle(int deg) {
+  const long cMinDutyCycle = 400;                     // duty cycle for 0 degrees
+  const long cMaxDutyCycle = 2100;                    // duty cycle for 180 degrees
+  long dutyCycle = map(deg, 0, 180, cMinDutyCycle, cMaxDutyCycle);  // convert to duty cycle
+#ifdef OUTPUT_ON
+  float percent = dutyCycle * 0.0061039;              // (dutyCycle / 16383) * 100
+  Serial.printf("Degrees %d, Duty Cycle Val: %ld = %f%%\n", servoPos, dutyCycle, percent);
+#endif
+  return dutyCycle;
 }
