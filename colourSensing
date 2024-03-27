@@ -1,4 +1,4 @@
-#define PRINT_COLOUR                                  // uncomment to turn on output of colour sensor data
+#define PRINT_COLOUR                               
 #define STEP_OUTPUT_ON  
 
 #include <Arduino.h>
@@ -57,12 +57,6 @@ boolean runState             = false;                  // 0 = stopped; 1 = runni
 //     NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //     NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //     NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
-Adafruit_NeoPixel SmartLEDs(cSmartLEDCount, cSmartLED, NEO_RGB + NEO_KHZ800);
-
-// Smart LED brightness for heartbeat
-unsigned char LEDBrightnessIndex = 0; 
-unsigned char LEDBrightnessLevels[] = {0, 0, 0, 5, 15, 30, 45, 60, 75, 90, 105, 120, 135, 
-                                       150, 135, 120, 105, 90, 75, 60, 45, 30, 15, 5, 0};
 
 // TCS34725 colour sensor with 2.4 ms integration time and gain of 4
 // see https://github.com/adafruit/Adafruit_TCS34725/blob/master/Adafruit_TCS34725.h for all possible values
@@ -70,18 +64,6 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS347
 bool tcsFlag = 0;                                     // TCS34725 flag: 1 = connected; 0 = not found
 
 void setup() {
-  Serial.begin(115200);                               // Standard baud rate for ESP32 serial monitor
-
-  // Set up SmartLED
-  SmartLEDs.begin();                                  // initialize smart LEDs object
-  SmartLEDs.clear();                                  // clear pixel
-  SmartLEDs.setPixelColor(0, SmartLEDs.Color(0,0,0)); // set pixel colours to black (off)
-  SmartLEDs.setBrightness(0);                         // set brightness [0-255]
-  SmartLEDs.show();                                   // update LED
-
-  Wire.setPins(cSDA, cSCL);                           // set I2C pins for TCS34725
-  pinMode(cTCSLED, OUTPUT);                           // configure GPIO to control LED on TCS34725
-  pinMode(cLEDSwitch, INPUT_PULLUP);                  // configure GPIO to set state of TCS34725 LED 
 
   // Connect to TCS34725 colour sensor
   if (tcs.begin()) {
@@ -91,9 +73,7 @@ void setup() {
   else {
     Serial.printf("No TCS34725 found ... check your connections\n");
     tcsFlag = false;
-  }
-
-  
+  }  
 }
 
 void loop() {
@@ -106,22 +86,6 @@ void loop() {
       Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
 #endif
   }
-  doHeartbeat();                                      // update heartbeat LED
 }
 
-// update heartbeat LED
-void doHeartbeat() {
-  curMillis = millis();                               // get the current time in milliseconds
-  // check to see if elapsed time matches the heartbeat interval
-  if ((curMillis - lastHeartbeat) > cHeartbeatInterval) {
-    lastHeartbeat = curMillis;                        // update the heartbeat time for the next update
-    LEDBrightnessIndex++;                             // shift to the next brightness level
-    if (LEDBrightnessIndex > sizeof(LEDBrightnessLevels)) { // if all defined levels have been used
-      LEDBrightnessIndex = 0;                         // reset to starting brightness
-    }
-    SmartLEDs.setBrightness(LEDBrightnessLevels[LEDBrightnessIndex]); // set brightness of heartbeat LED
-    SmartLEDs.setPixelColor(0, SmartLEDs.Color(0, 250, 0)); // set pixel colours to green
-    SmartLEDs.show();                                 // update LED
-  }
-}
 
