@@ -1,4 +1,14 @@
 #include <Servo.h>
+#define PRINT_COLOUR                              
+
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <SPI.h>
+#include "Adafruit_TCS34725.h"
+
+// Function declarations
+void doHeartbeat();
 
 Servo myservo;  // create servo object to control a servo
 // twelve servo objects can be created on most boards
