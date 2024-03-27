@@ -1,0 +1,107 @@
+
+// MSE 2202 TCS34725 colour sensor example
+// 
+//  Language: Arduino (C++)
+//  Target:   ESP32-S3
+//  Author:   Michael Naish
+//  Date:     2024 03 05 
+//
+
+#define PRINT_COLOUR                               
+#define STEP_OUTPUT_ON  
+
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <SPI.h>
+#include "Adafruit_TCS34725.h"
+#include <Servo.h>
+
+// Function declarations
+void doHeartbeat();
+void ARDUINO_ISR_ATTR buttonISR(void* arg);
+void ARDUINO_ISR_ATTR timerISR();
+
+// Button structure
+struct Button {
+  const int pin;                                       // GPIO pin for button
+  unsigned int numberPresses;                          // counter for number of button presses
+  unsigned int lastPressTime;                          // time of last button press in ms
+  bool pressed;                                        // flag for button press event
+};
+
+
+// Constants
+const int cHeartbeatInterval = 75;                    // heartbeat update interval, in milliseconds
+const int cSmartLED          = 21;                    // when DIP switch S1-4 is on, SMART LED is connected to GPIO21
+const int cSmartLEDCount     = 1;                     // number of Smart LEDs in use
+const int cSDA               = 47;                    // GPIO pin for I2C data
+const int cSCL               = 48;                    // GPIO pin for I2C clock
+const int cTCSLED            = 14;                    // GPIO pin for LED on TCS34725
+const int cLEDSwitch         = 46;                    // DIP switch S1-2 controls LED on TCS32725    
+const int cPotPin            = 1;                      // when DIP switch S1-3 is on, pot (R1) is connected to GPIO1 (ADC1-0)
+const int cToggle1           = 46;                     // DIP switch S1-2 turns stepper on/off  
+const int cStepPin           = 40;                     // GPIO pin for step signal to A4988
+const int cDirPin            = 39;                     // GPIO pin for direction signal to A4988
+const int cStepRes           = 8;                      // bit resolution for stepper PWM stepper
+const int cStepFreq          = 100;                    // initial frequency of stepper PWM
+const long cDebounceDelay    = 20;                     // button debounce delay in milliseconds
+int pos                      = 0;                      //stores the position of the servo
+// Variables
+boolean heartbeatState       = true;                  // state of heartbeat LED
+unsigned int robotIndex      = 0;
+unsigned long lastHeartbeat  = 0;                     // time of last heartbeat state change
+unsigned long curMillis      = 0;                     // current time, in milliseconds
+unsigned long prevMillis     = 0;                     // start time for delay cycle, in milliseconds
+Button button                = {0, 0, 0, false};       // NO pushbutton PB1 on GPIO 0, low state when pressed
+hw_timer_t * pTimer          = NULL;                   // pointer to timer used by timer interrupt
+boolean stepDir              = true;                   // step direction
+volatile int32_t stepCount   = 0;                      // number of steps
+boolean runState             = false;                  // 0 = stopped; 1 = running
+
+// Declare SK6812 SMART LED object
+//   Argument 1 = Number of LEDs (pixels) in use
+//   Argument 2 = ESP32 pin number 
+//   Argument 3 = Pixel type flags, add together as needed:
+//     NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
+//     NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
+//     NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
+//     NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
+//     NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
+
+// TCS34725 colour sensor with 2.4 ms integration time and gain of 4
+// see https://github.com/adafruit/Adafruit_TCS34725/blob/master/Adafruit_TCS34725.h for all possible values
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
+bool tcsFlag = 0;                                     // TCS34725 flag: 1 = connected; 0 = not found
+
+void setup() {
+  //setting up the servo motors
+  myservo1.attach(9);  // attaches the first servo on pin 9 to the servo object
+  myservo2.attach(10); // attaches the second servo on pin 10 to the servo object
+  
+  // Connect to TCS34725 colour sensor
+  if (tcs.begin()) {
+    Serial.printf("Found TCS34725 colour sensor\n");
+    tcsFlag = true;
+  } 
+  else {
+    Serial.printf("No TCS34725 found ... check your connections\n");
+    tcsFlag = false;
+  }  
+}
+
+void loop() {
+  uint16_t r, g, b, c;                                // RGBC values from TCS34725
+
+  switch(robotIndex){
+    case 0: //arm is up
+      //Bot.toPosition
+      break;
+    case 1: //robot detecting colour
+      digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));    // turn on onboard LED if switch state is low (on position)
+      if (tcsFlag) {                                      // if colour sensor initialized
+        tcs.getRawData(&r, &g, &b, &c);                   // get raw RGBC values
+      #ifdef PRINT_COLOUR            
+            Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+      #endif
+      }
