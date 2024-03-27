@@ -1,3 +1,12 @@
+// 
+// MSE 2202 TCS34725 colour sensor example
+// 
+//  Language: Arduino (C++)
+//  Target:   ESP32-S3
+//  Author:   Michael Naish
+//  Date:     2024 03 05 
+//
+
 #define PRINT_COLOUR                               
 #define STEP_OUTPUT_ON  
 
@@ -40,6 +49,7 @@ const long cDebounceDelay    = 20;                     // button debounce delay 
 
 // Variables
 boolean heartbeatState       = true;                  // state of heartbeat LED
+unsigned int robotIndex      = 0;
 unsigned long lastHeartbeat  = 0;                     // time of last heartbeat state change
 unsigned long curMillis      = 0;                     // current time, in milliseconds
 unsigned long prevMillis     = 0;                     // start time for delay cycle, in milliseconds
@@ -78,16 +88,46 @@ void setup() {
 }
 
 void loop() {
-
   uint16_t r, g, b, c;                                // RGBC values from TCS34725
-  
-  digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));    // turn on onboard LED if switch state is low (on position)
-  if (tcsFlag) {                                      // if colour sensor initialized
-    tcs.getRawData(&r, &g, &b, &c);                   // get raw RGBC values
-#ifdef PRINT_COLOUR            
-      Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
-#endif
+
+  switch(robotIndex){
+    case 0: //arm is up
+      //Bot.toPosition
+      break;
+    case 1: //robot detecting colour
+      digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));    // turn on onboard LED if switch state is low (on position)
+      if (tcsFlag) {                                      // if colour sensor initialized
+        tcs.getRawData(&r, &g, &b, &c);                   // get raw RGBC values
+      #ifdef PRINT_COLOUR            
+            Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+      #endif
+      }
+      // if statement for detecting the colours
+      break;
+
+    case 2: //rotate arm down with servo 1
+      break;
+
+    case 3: //stepper rotatoes 1.5 rev
+      break;
+
+    case 4: //arm goes back up using servo 1
+      break;
+    
+    case 5: //servo 2 rotates and brings arm to edge of base
+      break;
+
+    case 6: //servo 1 rotates to elevate the arm (provides clearance)
+      break;
+
+    case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
+      break;
+
+    case 8: //stepper rotates in the opposite direction to release the stone
+      break;
+
   }
+}
 }
 
 
