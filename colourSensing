@@ -46,7 +46,7 @@ const int cDirPin            = 39;                     // GPIO pin for direction
 const int cStepRes           = 8;                      // bit resolution for stepper PWM stepper
 const int cStepFreq          = 100;                    // initial frequency of stepper PWM
 const long cDebounceDelay    = 20;                     // button debounce delay in milliseconds
-
+int pos                      = 0;                      //stores the position of the servo
 // Variables
 boolean heartbeatState       = true;                  // state of heartbeat LED
 unsigned int robotIndex      = 0;
@@ -75,7 +75,10 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS347
 bool tcsFlag = 0;                                     // TCS34725 flag: 1 = connected; 0 = not found
 
 void setup() {
-
+  //setting up the servo motors
+  myservo1.attach(9);  // attaches the first servo on pin 9 to the servo object
+  myservo2.attach(10); // attaches the second servo on pin 10 to the servo object
+  
   // Connect to TCS34725 colour sensor
   if (tcs.begin()) {
     Serial.printf("Found TCS34725 colour sensor\n");
@@ -108,7 +111,7 @@ void loop() {
     case 2: //rotate arm down with servo 1
       break;
 
-    case 3: //stepper rotatoes 1.5 rev
+    case 3: //stepper rotates 1.5 rev
       break;
 
     case 4: //arm goes back up using servo 1
@@ -128,6 +131,3 @@ void loop() {
 
   }
 }
-}
-
-
