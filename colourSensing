@@ -60,7 +60,7 @@ Button button                = {0, 0, 0, false};       // NO pushbutton PB1 on G
 hw_timer_t * pTimer          = NULL;                   // pointer to timer used by timer interrupt
 boolean stepDir              = true;                   // step direction
 volatile int32_t stepCount   = 0;                      // number of steps
-boolean runState             = false;                  // 0 = stopped; 1 = running
+boolean stepperRunState             = false;                  // 0 = stopped; 1 = running
 
 // Declare SK6812 SMART LED object
 //   Argument 1 = Number of LEDs (pixels) in use
@@ -119,6 +119,26 @@ void loop() {
       break;
 
     case 3: //stepper rotates 1.5 rev
+      stepperRunState = !digitalRead(cToggle1);                   // read switch to determine run state (low when "on")
+
+      if (button.pressed) {                                // reverse step direction with each button press
+        stepDir ^= 1; 
+        button.pressed = false;
+      }
+      digitalWrite(cDirPin, stepDir);                      // set direction pin
+
+      int speedPot = analogRead(cPotPin);                  // read speed pot value (between 0 and 4095)
+      unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
+    #ifdef POT_OUTPUT_ON
+      Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
+    #endif
+      timerAlarmWrite(pTimer, stepRate, true);             // update interrupt period to adjust step frequency
+    #ifdef STEP_OUTPUT_ON
+      long freq = 1000000 / (stepRate * 2);                // convert step rate to frequency in Hz
+      Serial.printf("Dir: %d, rate: %lu, freq: %ld Hz, count: %ld\n", stepDir, stepRate * 2, freq, stepCount);
+    #endif
+      
+      doHeartbeat(); 
       break;
 
     case 4: //arm goes back up using servo 1
@@ -150,6 +170,26 @@ void loop() {
       break;
 
     case 8: //stepper rotates in the opposite direction to release the stone
+      stepperRunState = !digitalRead(cToggle1);                   // read switch to determine run state (low when "on")
+
+      if (button.pressed) {                                // reverse step direction with each button press
+        stepDir ^= 1; 
+        button.pressed = false;
+      }
+      digitalWrite(cDirPin, stepDir);                      // set direction pin
+
+      int speedPot = analogRead(cPotPin);                  // read speed pot value (between 0 and 4095)
+      unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
+    #ifdef POT_OUTPUT_ON
+      Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
+    #endif
+      timerAlarmWrite(pTimer, stepRate, true);             // update interrupt period to adjust step frequency
+    #ifdef STEP_OUTPUT_ON
+      long freq = 1000000 / (stepRate * 2);                // convert step rate to frequency in Hz
+      Serial.printf("Dir: %d, rate: %lu, freq: %ld Hz, count: %ld\n", stepDir, stepRate * 2, freq, stepCount);
+    #endif
+      
+      doHeartbeat(); 
       break;
 
   }
