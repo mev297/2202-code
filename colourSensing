@@ -1,3 +1,4 @@
+
 //  Language: Arduino (C++)
 //  Target:   ESP32-S3
 //  Author:   Merlyn, Lauren, Chirayu
@@ -124,8 +125,8 @@ void loop() {
       }
       digitalWrite(cDirPin, stepDir);                      // set direction pin
 
-      int speedPot = analogRead(cPotPin);                  // CHANGE THIS FOR SPEED!!!!!!!!!!!!!!!!!!!!!!!
-      unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
+      int speedPot = 0;                  // CHANGE THIS FOR SPEED!!!!!!!!!!!!!!!!!!!!!!!
+      unsigned long stepRate = 1000; // map to half period in microseconds
     #ifdef POT_OUTPUT_ON
       Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
     #endif
@@ -175,8 +176,8 @@ void loop() {
       }
       digitalWrite(cDirPin, stepDir);                      // set direction pin
 
-      int speedPot = analogRead(cPotPin);                  // CHANGE THIS FOR SPEED!!!!!!!!!!!!!!1
-      unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
+      int speedPot = 0;                  // CHANGE THIS FOR SPEED!!!!!!!!!!!!!!1
+      unsigned long stepRate = 1000; // map to half period in microseconds
     #ifdef POT_OUTPUT_ON
       Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
     #endif
@@ -212,3 +213,23 @@ long degreesToDutyCycle(int deg) {
 #endif
   return dutyCycle;
 }
+void ARDUINO_ISR_ATTR buttonISR(void* arg) {
+  Button* s = static_cast<Button*>(arg);               // cast pointer to static structure
+
+  uint32_t pressTime = millis();                       // capture current time
+  if (pressTime - s->lastPressTime > cDebounceDelay) { // if enough time has passed to consider a valid press
+    s->numberPresses += 1;                             // increment switch press counter
+    s->pressed = true;                                 // indicate valid switch press state
+    s->lastPressTime = pressTime;                      // update time to measure next press against
+   }
+ }
+void ARDUINO_ISR_ATTR timerISR() {
+  if (runState) {                                      // Only send pulse if motor should be running
+    digitalWrite(cStepPin, !digitalRead(cStepPin));    // toggle state of step pin
+    if (stepDir) {
+      stepCount++;                                     // add to count in forward direction
+    }
+    else {
+      stepCount--;                                     // subtract from count in reverse direction
+    }
+  }
