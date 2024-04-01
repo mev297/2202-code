@@ -1,4 +1,3 @@
-
 //  Language: Arduino (C++)
 //  Target:   ESP32-S3
 //  Author:   Merlyn, Lauren, Chirayu
@@ -19,7 +18,7 @@
 void doHeartbeat();
 void ARDUINO_ISR_ATTR buttonISR(void* arg);
 void ARDUINO_ISR_ATTR timerISR();
-void calibrate();
+//void calibrate();
 void degreesToDutyCycle(int);
 // Button structure
 struct Button {
@@ -192,14 +191,15 @@ void loop() {
 
   }
 }
-
+/*
 void calibrate(){
   while(limitSwitch2.pressed == false){
     //move motor until it hits first switch
 @@ -372,6 +376,7 @@ void calibrate(){
   digitalWrite(LED2,0);
   checkLimSwitchStatus();
-}
+}*/
+
 // Converts servo position in degrees into the required duty cycle for an RC servo motor control signal 
 // assuming 14-bit resolution (i.e., value represented as fraction of 16383). 
 // Note that the constants for minimum and maximum duty cycle may need to be adjusted for a specific motor
