@@ -64,8 +64,8 @@ void loop() {
   }
   digitalWrite(cDirPin, stepDir);                      // set direction pin
 
-  int speedPot = analogRead(cPotPin);                  // read speed pot value (between 0 and 4095)
-  unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
+  int speedPot =  0;                  // read speed pot value (between 0 and 4095)
+  unsigned long stepRate = 1000; // map to half period in microseconds
 #ifdef POT_OUTPUT_ON
   Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
 #endif
