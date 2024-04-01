@@ -127,7 +127,7 @@ void loop() {
       }
       digitalWrite(cDirPin, stepDir);                      // set direction pin
 
-      int speedPot = analogRead(cPotPin);                  // read speed pot value (between 0 and 4095)
+      int speedPot = analogRead(cPotPin);                  // CHANGE THIS FOR SPEED!!!!!!!!!!!!!!!!!!!!!!!
       unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
     #ifdef POT_OUTPUT_ON
       Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
@@ -138,7 +138,7 @@ void loop() {
       Serial.printf("Dir: %d, rate: %lu, freq: %ld Hz, count: %ld\n", stepDir, stepRate * 2, freq, stepCount);
     #endif
       
-      doHeartbeat(); 
+      //doHeartbeat(); 
       break;
 
     case 4: //arm goes back up using servo 1
@@ -178,7 +178,7 @@ void loop() {
       }
       digitalWrite(cDirPin, stepDir);                      // set direction pin
 
-      int speedPot = analogRead(cPotPin);                  // read speed pot value (between 0 and 4095)
+      int speedPot = analogRead(cPotPin);                  // CHANGE THIS FOR SPEED!!!!!!!!!!!!!!1
       unsigned long stepRate = map(speedPot, 0, 4095, 500, 60000); // map to half period in microseconds
     #ifdef POT_OUTPUT_ON
       Serial.printf("Pot: %d, Period: %lu us\n", speedPot, stepRate * 2);
@@ -189,7 +189,7 @@ void loop() {
       Serial.printf("Dir: %d, rate: %lu, freq: %ld Hz, count: %ld\n", stepDir, stepRate * 2, freq, stepCount);
     #endif
       
-      doHeartbeat(); 
+      //doHeartbeat(); 
       break;
 
   }
