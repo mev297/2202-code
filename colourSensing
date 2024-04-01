@@ -1,10 +1,7 @@
-// 
-// MSE 2202 TCS34725 colour sensor example
-// 
 //  Language: Arduino (C++)
 //  Target:   ESP32-S3
-//  Author:   Michael Naish
-//  Date:     2024 03 05 
+//  Author:   Merlyn, Lauren, Chirayu
+//  Date:     2024 04 01 
 //
 
 #define PRINT_COLOUR                               
