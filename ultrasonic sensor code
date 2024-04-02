@@ -1,0 +1,42 @@
+// Define pins for the ultrasonic sensor
+const int trigPin = 9;
+const int echoPin = 10;
+
+// Define the motor control pins
+const int motorPin = 3;
+
+void setup() {
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  // Set the sensor pins as input/output
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // Set the motor pin as output
+  pinMode(motorPin, OUTPUT);
+}
+
+void loop() {
+  // Clear the trigPin by setting it LOW
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  // Set the trigPin HIGH for 10 microseconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Read the echoPin and calculate the distance in cm
+  long duration = pulseIn(echoPin, HIGH);
+  float distance = duration * 0.034 / 2;
+
+  // Print the distance to the Serial Monitor
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Check if the distance is less than 5 cm
+  if (distance < 5) {
+    robotindex = 2;
+}
