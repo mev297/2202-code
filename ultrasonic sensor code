@@ -36,7 +36,5 @@ void loop() {
   Serial.print(distance);
   Serial.println(" cm");
 
-  // Check if the distance is less than 5 cm
-  if (distance < 5) {
-    robotindex = 2;
+
 }
