@@ -26,8 +26,6 @@ struct Button {
 
 // Constants
 const int cTCSLED            = 14;
-const int cLEDSwitch         = 46;
-const int cToggle1           = 46;
 const int cStepPin           = 40;
 const int cDirPin            = 39;
 const long cDebounceDelay    = 20;
