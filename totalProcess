@@ -111,8 +111,6 @@ void loop() {
         break;
       }
 
-      //if the wrong colour is detected, this is where the drive code for moving to the next stone would be integrated
-
     case 2: //rotate arm down with servo 1
         for (servoPos1 = 0; servoPos1 <= 60; servoPos1 += 1) { // goes from 0 degrees to 180 degrees CHANGE VALUE BASED ON TESTING
           // in steps of 1 degree
@@ -150,22 +148,16 @@ void loop() {
         }
       break;
     
-    case 5: //servo 2 rotates and brings arm to edge of base
-      for (servoPos2 = 0; servoPos2 <= 50; servoPos2 += 1) { // goes from 0 degrees to 180 degrees CHANGE VALUE BASED ON TESTING
-          // in steps of 1 degree
-          myservo2.write(servoPos2);              // tell servo to go to position in variable 'pos'
-        }
-      break;
 
 
-    case 6: //servo 2 rotates more (in same direction as before) to bring to mounted container
+    case 5: //servo 2 rotates more (in same direction as before) to bring to mounted container
       for (servoPos2 = 0; servoPos2 <= 180; servoPos2 += 1) { // goes from 0 degrees to 180 degrees CHANGE VALUE BASED ON TESTING
           // in steps of 1 degree
           myservo2.write(servoPos2);              // tell servo to go to position in variable 'pos'
         }
       break;
 
-    case 7: //stepper rotates in the opposite direction to release the stone
+    case 6: //stepper rotates in the opposite direction to release the stone
       stepperRunState = !digitalRead(cToggle1);                   // read switch to determine run state (low when "on")
 
       if (button.pressed) {                                // reverse step direction with each button press
@@ -188,7 +180,7 @@ void loop() {
       //doHeartbeat(); 
       break;
 
-    case 8: //servo 2 rotates more (in same direction as before) to bring to mounted container
+    case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
       for (servoPos2 = 180; servoPos2 > 0; servoPos2 -= 1) { // goes from 0 degrees to 180 degrees CHANGE VALUE BASED ON TESTING
           // in steps of 1 degree
           myservo2.write(servoPos2);              // tell servo to go to position in variable 'pos'
