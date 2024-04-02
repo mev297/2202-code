@@ -1,3 +1,10 @@
+
+//  Language: Arduino (C++)
+//  Target:   ESP32-S3
+//  Author:   Merlyn, Lauren, Chirayu
+//  Date:     2024 04 01 
+//
+
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <Wire.h>
@@ -112,12 +119,14 @@ void loop() {
           analogWrite(SERVO_PIN_1, pulseWidth1); // Send the pulse width to the first servo
           pos1++;
         }
+      robotIndex=3;
       break;
 
     case 3: //stepper rotates 1.5 rev
       stepperRunState = true; // Start the stepper motor
       stepDir = true; // Set the direction
       digitalWrite(cDirPin, stepDir); // Set direction pin
+      robotIndex=4;
       break;
 
     case 4: //arm goes back up using servo 1
@@ -126,6 +135,7 @@ void loop() {
           analogWrite(SERVO_PIN_1, pulseWidth1); // Send the pulse width to the first servo
           pos1--;
         }
+      robotIndex=5;
       break;
 
     case 5: //servo 2 rotates more (in same direction as before) to bring to mounted container
@@ -134,12 +144,14 @@ void loop() {
           analogWrite(SERVO_PIN_2, pulseWidth2); // Send the pulse width to the second servo
           pos2++;
         }
+      robotIndex=6;
       break;
 
     case 6: //stepper rotates in the opposite direction to release the stone
       stepperRunState = true; // Start the stepper motor
       stepDir = false; // Reverse the direction
       digitalWrite(cDirPin, stepDir); // Set direction pin
+      robotIndex=7;
       break;
 
     case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
