@@ -126,13 +126,15 @@ void loop() {
         robotIndex = 2;
         break;
       }
-      // Additional code if needed
-      break;
+      
 
     case 2: //rotate arm down with servo 1
       moveServo(60, SERVO_PIN_1);
-      robotIndex = 3;
-      break;
+      if(pos1==6){
+        robotIndex = 3;
+        break;
+      }
+      
 
     case 3: //stepper rotates 1.5 rev
       stepperRunState = true; // Start the stepper motor
@@ -140,18 +142,24 @@ void loop() {
       digitalWrite(cDirPin, stepDir); // Set direction pin
       if (timeUp2sec) { 
       robotIndex = 4;
-                   } 
+      } 
       break;
 
     case 4: //arm goes back up using servo 1
       moveServo(0, SERVO_PIN_1);
-      robotIndex = 5;
-      break;
+      if(pos1==0){
+        robotIndex = 5;
+        break;
+      }
+      
 
     case 5: //servo 2 rotates more (in same direction as before) to bring to mounted container
       moveServo(180, SERVO_PIN_2);
-      robotIndex = 6;
-      break;
+      if(pos2==180){
+        robotIndex = 6;
+        break;
+      }
+      
 
     case 6: //stepper rotates in the opposite direction to release the stone
       stepperRunState = true; // Start the stepper motor
@@ -162,10 +170,14 @@ void loop() {
 
     case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
       moveServo(0, SERVO_PIN_2);
-      break;
+      if(pos2==0){
+        break;
+      }
+      
 
     default:
       // Handle invalid robotIndex value
+      Serial.printf("Invalid robot index");
       break;
   }
 }
