@@ -107,6 +107,7 @@ void loop() {
       }
       // if statement for detecting the colours
       if (g > r || g == r) {
+        Serial.printf("Go to case 2");
         robotIndex=2;
         break;
       }
@@ -119,6 +120,7 @@ void loop() {
           analogWrite(SERVO_PIN_1, pulseWidth1); // Send the pulse width to the first servo
           pos1++;
         }
+      Serial.printf("Go to case 3");
       robotIndex=3;
       break;
 
@@ -126,6 +128,7 @@ void loop() {
       stepperRunState = true; // Start the stepper motor
       stepDir = true; // Set the direction
       digitalWrite(cDirPin, stepDir); // Set direction pin
+      Serial.printf("Go to case 4");
       robotIndex=4;
       break;
 
@@ -135,6 +138,7 @@ void loop() {
           analogWrite(SERVO_PIN_1, pulseWidth1); // Send the pulse width to the first servo
           pos1--;
         }
+      Serial.printf("Go to case 5");
       robotIndex=5;
       break;
 
@@ -144,6 +148,7 @@ void loop() {
           analogWrite(SERVO_PIN_2, pulseWidth2); // Send the pulse width to the second servo
           pos2++;
         }
+      Serial.printf("Go to case 6");
       robotIndex=6;
       break;
 
@@ -151,6 +156,7 @@ void loop() {
       stepperRunState = true; // Start the stepper motor
       stepDir = false; // Reverse the direction
       digitalWrite(cDirPin, stepDir); // Set direction pin
+      Serial.printf("Go to case 7");
       robotIndex=7;
       break;
 
