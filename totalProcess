@@ -111,6 +111,8 @@ void loop() {
         break;
       }
 
+      //if the wrong colour is detected, this is where the drive code for moving to the next stone would be integrated
+
     case 2: //rotate arm down with servo 1
         for (servoPos1 = 0; servoPos1 <= 60; servoPos1 += 1) { // goes from 0 degrees to 180 degrees CHANGE VALUE BASED ON TESTING
           // in steps of 1 degree
