@@ -1,3 +1,4 @@
+
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <Wire.h>
@@ -25,7 +26,13 @@ struct Button {
 };
 
 // Constants
+const int cHeartbeatInterval = 75;                    // heartbeat update interval, in milliseconds
+const int cSmartLED          = 21;                    // when DIP switch S1-4 is on, SMART LED is connected to GPIO21
 const int cTCSLED            = 14;
+const int cLEDSwitch         = 46;
+
+const int cSDA               = 47;                    // GPIO pin for I2C data
+const int cSCL               = 48;                    // GPIO pin for I2C clock
 const int cStepPin           = 40;
 const int cDirPin            = 39;
 const long cDebounceDelay    = 20;
@@ -51,7 +58,20 @@ void setup() {
   timerAttachInterrupt(pTimer, &timerISR, true); // Attach timer interrupt
   timerAlarmWrite(pTimer, 1000, true); // 1 ms period
   timerAlarmEnable(pTimer); // Enable the timer
+
+  Wire.setPins(cSDA, cSCL);                           // set I2C pins for TCS34725
+  pinMode(cTCSLED, OUTPUT);                           // configure GPIO to control LED on TCS34725
+  pinMode(cLEDSwitch, INPUT_PULLUP);                  // configure GPIO to set state of TCS34725 LED 
+   if (tcs.begin()) {
+    Serial.printf("Found TCS34725 colour sensor\n");
+    tcsFlag = true;
+  } 
+  else {
+    Serial.printf("No TCS34725 found ... check your connections\n");
+    tcsFlag = false;
+  }  
 }
+
 
 void loop() {
   uint16_t r, g, b, c; // RGBC values from TCS34725
