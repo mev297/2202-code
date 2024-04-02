@@ -55,6 +55,19 @@ Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS,
 bool tcsFlag                 = true;
 int pos1 = 0; // Variable to store the position of the first servo motor
 int pos2 = 0; // Variable to store the position of the second servo motor
+boolean motorsEnabled = true;                                                  // motors enabled flag
+boolean timeUp3sec = false;                                                    // 3 second timer elapsed flag
+boolean timeUp2sec = false;                                                    // 2 second timer elapsed flag
+unsigned char driveSpeed;                                                      // motor drive speed (0-255)
+unsigned char driveIndex;                                                      // state index for run mode
+unsigned int  modePBDebounce;                                                  // pushbutton debounce timer count
+unsigned long timerCount3sec = 0;                                              // 3 second timer count in milliseconds
+unsigned long timerCount2sec = 0;                                              // 2 second timer count in milliseconds
+unsigned long displayTime;                                                     // heartbeat LED update timer
+unsigned long previousMicros;                                                  // last microsecond count
+unsigned long currentMicros;                                                   // current microsecond count
+long targetCounts;
+long pauseStart;
 
 
 hw_timer_t * pTimer; // Declare pTimer
@@ -134,7 +147,7 @@ void loop() {
       digitalWrite(cDirPin, stepDir); // Set direction pin
       if (timeUp2sec) { 
       robotIndex = 4;
-} 
+                   } 
       break;
 
     case 4: //arm goes back up using servo 1
@@ -162,6 +175,7 @@ void loop() {
       // Handle invalid robotIndex value
       break;
   }
+}
 }
 
 void buttonISR(void* arg) {
