@@ -56,6 +56,7 @@ bool tcsFlag                 = true;
 int pos1 = 0; // Variable to store the position of the first servo motor
 int pos2 = 0; // Variable to store the position of the second servo motor
 
+
 hw_timer_t * pTimer; // Declare pTimer
 
 void setup() {
@@ -83,7 +84,26 @@ void setup() {
 
 void loop() {
   uint16_t r, g, b, c; // RGBC values from TCS34725
-  digitalWrite(cTCSLED, !digitalRead(cLEDSwitch)); // turn on onboard LED if switch state is low (on position)
+  digitalWrite(cTCSLED, !digitalRead(cLEDSwitch)); 
+
+ currentMicros = micros();                                                   // get current time in microseconds
+  if ((currentMicros - previousMicros) >= 1000) {                             // enter when 1 ms has elapsed
+     previousMicros = currentMicros;                                          // record current time in microseconds
+
+
+     // 3 second timer, counts 3000 milliseconds
+     timerCount3sec = timerCount3sec + 1;                                     // increment 3 second timer count
+     if (timerCount3sec > 3000) {                                             // if 3 seconds have elapsed
+        timerCount3sec = 0;                                                   // reset 3 second timer count
+        timeUp3sec = true;                                                    // indicate that 3 seconds have elapsed
+     }
+  
+     // 2 second timer, counts 2000 milliseconds
+     timerCount2sec = timerCount2sec + 1;                                     // increment 2 second timer count
+     if (timerCount2sec > 2000) {                                             // if 2 seconds have elapsed
+        timerCount2sec = 0;                                                   // reset 2 second timer count
+        timeUp2sec = true;                                                    // indicate that 2 seconds have elapsed
+     } // turn on onboard LED if switch state is low (on position)
   switch(robotIndex) {
     case 0: //arm is up
       robotIndex = 1;
@@ -103,36 +123,38 @@ void loop() {
       // Additional code if needed
       break;
 
-    /*case 2: //rotate arm down with servo 1
+    case 2: //rotate arm down with servo 1
       moveServo(60, SERVO_PIN_1);
       robotIndex = 3;
-      break;*/
+      break;
 
-    case 2: //stepper rotates 1.5 rev
+    case 3: //stepper rotates 1.5 rev
       stepperRunState = true; // Start the stepper motor
       stepDir = true; // Set the direction
       digitalWrite(cDirPin, stepDir); // Set direction pin
-      robotIndex = 3;
-      break;
-
-    /*case 4: //arm goes back up using servo 1
-      moveServo(0, SERVO_PIN_1);
-      robotIndex = 5;
-      break;*/
-
-    case 3: //servo 2 rotates more (in same direction as before) to bring to mounted container
-      moveServo(180, SERVO_PIN_2);
+      if (timeUp2sec) { 
       robotIndex = 4;
+} 
       break;
 
-    case 4: //stepper rotates in the opposite direction to release the stone
-      stepperRunState = true; // Start the stepper motor
-      stepDir = false; // Reverse the direction
-      digitalWrite(cDirPin, stepDir); // Set direction pin
+    case 4: //arm goes back up using servo 1
+      moveServo(0, SERVO_PIN_1);
       robotIndex = 5;
       break;
 
     case 5: //servo 2 rotates more (in same direction as before) to bring to mounted container
+      moveServo(180, SERVO_PIN_2);
+      robotIndex = 6;
+      break;
+
+    case 6: //stepper rotates in the opposite direction to release the stone
+      stepperRunState = true; // Start the stepper motor
+      stepDir = false; // Reverse the direction
+      digitalWrite(cDirPin, stepDir); // Set direction pin
+      robotIndex = 7;
+      break;
+
+    case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
       moveServo(0, SERVO_PIN_2);
       break;
 
