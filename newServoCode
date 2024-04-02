@@ -1,4 +1,4 @@
-#define SERVO_PIN 9            // Define the pin connected to the servo motor
+#define SERVO_PIN 41            // Define the pin connected to the servo motor
 #define SERVO_MIN_PULSE_WIDTH 544 // Minimum pulse width in microseconds
 #define SERVO_MAX_PULSE_WIDTH 2400 // Maximum pulse width in microseconds
 #define SERVO_MIN_ANGLE 0      // Minimum angle in degrees
