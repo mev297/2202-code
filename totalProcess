@@ -16,7 +16,7 @@
 #include <Servo.h>
 
 // Function declarations
-void doHeartbeat();
+//void doHeartbeat();
 void ARDUINO_ISR_ATTR buttonISR(void* arg);
 void ARDUINO_ISR_ATTR timerISR();
 //void calibrate();
@@ -31,7 +31,7 @@ struct Button {
 
 
 // Constants
-const int cHeartbeatInterval = 75;                    // heartbeat update interval, in milliseconds
+//const int cHeartbeatInterval = 75;                    // heartbeat update interval, in milliseconds
 const int cSmartLED          = 21;                    // when DIP switch S1-4 is on, SMART LED is connected to GPIO21
 const int cSmartLEDCount     = 1;                     // number of Smart LEDs in use
 const int cSDA               = 47;                    // GPIO pin for I2C data
@@ -49,9 +49,9 @@ int servoPos1                = 0;                      //stores the position of 
 int servoPos2                = 0;                      //stores the position of servo 2
 
 // Variables
-boolean heartbeatState       = true;                  // state of heartbeat LED
+//boolean heartbeatState       = true;                  // state of heartbeat LED
 unsigned int robotIndex      = 0;
-unsigned long lastHeartbeat  = 0;                     // time of last heartbeat state change
+//unsigned long lastHeartbeat  = 0;                     // time of last heartbeat state change
 unsigned long curMillis      = 0;                     // current time, in milliseconds
 unsigned long prevMillis     = 0;                     // start time for delay cycle, in milliseconds
 Button button                = {0, 0, 0, false};       // NO pushbutton PB1 on GPIO 0, low state when pressed
