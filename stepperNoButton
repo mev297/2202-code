@@ -1,0 +1,80 @@
+#define STEP_OUTPUT_ON                                 // uncomment to turn on output of stepper motor information
+
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+
+// Function declarations
+void ARDUINO_ISR_ATTR timerISR();
+
+// Constants
+const int cSmartLED          = 21;                     // when DIP switch S1-4 is on, SMART LED is connected to GPIO21
+const int cSmartLEDCount     = 1;                      // number of Smart LEDs in use
+const int cPotPin            = 1;                      // when DIP switch S1-3 is on, pot (R1) is connected to GPIO1 (ADC1-0)
+const int cToggle1           = 46;                     // DIP switch S1-2 turns stepper on/off  
+const int cStepPin           = 40;                     // GPIO pin for step signal to A4988
+const int cDirPin            = 39;                     // GPIO pin for direction signal to A4988
+const int cStepRes           = 8;                      // bit resolution for stepper PWM stepper
+const int cStepFreq          = 100;                    // initial frequency of stepper PWM
+const long cDebounceDelay    = 20;                     // button debounce delay in milliseconds
+const unsigned long interval = 2500;                  // Time interval for direction change in milliseconds
+
+// Variables
+boolean heartbeatState       = true;                   // state of heartbeat LED
+unsigned long lastHeartbeat  = 0;                      // time of last heartbeat state change
+unsigned long curMillis      = 0;                      // current time, in milliseconds
+unsigned long prevMillis     = 0;                      // start time for delay cycle, in milliseconds
+hw_timer_t * pTimer          = NULL;                   // pointer to timer used by timer interrupt
+boolean stepDir              = true;                   // step direction
+volatile int32_t stepCount   = 0;                      // number of steps
+boolean runState             = false;                  // 0 = stopped; 1 = running
+unsigned long previousTime   = 0;                      // Previous time for direction change
+
+void setup() {
+  pinMode(cToggle1, INPUT_PULLUP);                     // configure GPIO to turn stepper on/off 
+  pinMode(cStepPin, OUTPUT);                           // assign output for step signal to A4988
+  pinMode(cDirPin, OUTPUT);                            // assign output for direction signal to A4988
+
+  pTimer = timerBegin(0, 80, true);                    // start timer 0 (1 of 4) with divide by 80 prescaler for 1 MHz resolution
+                                                       // (see ESP32 Technical Reference Manual for more info).
+  timerAttachInterrupt(pTimer, &timerISR, true);       // configure timer ISR
+  timerAlarmWrite(pTimer, 500, true);                  // set initial interrupt time (in microseconds), set to repeat
+  timerAlarmEnable(pTimer);                            // enable timer interrupt
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  // Determine the direction based on the current time
+  boolean clockwise = (currentMillis / interval) % 2 == 0;  // Alternate direction every 'interval' milliseconds
+
+  // Set the direction pin only when needed
+  if (currentMillis - previousTime >= interval) {
+    digitalWrite(cDirPin, clockwise);
+    previousTime = currentMillis;
+  }
+
+  // Calculate step rate based on desired speed (adjust as needed)
+  unsigned long stepRate = 1000; // Adjust as needed
+
+  // Update interrupt period to adjust step frequency
+  timerAlarmWrite(pTimer, stepRate, true);
+
+  // Print debug information if needed
+#ifdef STEP_OUTPUT_ON
+  long freq = 1000000 / (stepRate * 2); // Convert step rate to frequency in Hz
+  Serial.printf("Dir: %d, rate: %lu, freq: %ld Hz, count: %ld\n", clockwise, stepRate * 2, freq, stepCount);
+#endif
+}
+
+// timer interrupt service routine
+void ARDUINO_ISR_ATTR timerISR() {
+  if (runState) {                                      // Only send pulse if motor should be running
+    digitalWrite(cStepPin, !digitalRead(cStepPin));    // toggle state of step pin
+    if (stepDir) {
+      stepCount++;                                     // add to count in forward direction
+    }
+    else {
+      stepCount--;                                     // subtract from count in reverse direction
+    }
+  }
+}
