@@ -1,0 +1,37 @@
+#define SERVO_PIN 9            // Define the pin connected to the servo motor
+#define SERVO_MIN_PULSE_WIDTH 544 // Minimum pulse width in microseconds
+#define SERVO_MAX_PULSE_WIDTH 2400 // Maximum pulse width in microseconds
+#define SERVO_MIN_ANGLE 0      // Minimum angle in degrees
+#define SERVO_MAX_ANGLE 180    // Maximum angle in degrees
+#define SERVO_MOVE_TIME 1000   // Time taken to move from min to max angle (in milliseconds)
+
+unsigned long prevTime = 0;   // Variable to store the previous time
+int currentPosition = 0;      // Current position of the servo
+int targetPosition = 60;      // Target position to move the servo (in degrees)
+bool moving = false;           // Flag to indicate if the servo is currently moving
+
+void setup() {
+  pinMode(SERVO_PIN, OUTPUT); // Set the servo pin as an output
+}
+
+void loop() {
+  unsigned long currentTime = millis(); // Get the current time
+
+  if (!moving) { // If the servo is not currently moving
+    if (currentTime - prevTime >= SERVO_MOVE_TIME) { // Check if it's time to move again
+      moving = true; // Set the moving flag to true
+      prevTime = currentTime; // Update the previous time
+    }
+  } else { // If the servo is currently moving
+    int angleIncrement = (targetPosition - currentPosition) / (SERVO_MOVE_TIME / 20); // Calculate angle increment per update
+    currentPosition += angleIncrement; // Increment the current position
+    int pulseWidth = map(currentPosition, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE, SERVO_MIN_PULSE_WIDTH, SERVO_MAX_PULSE_WIDTH);
+    digitalWrite(SERVO_PIN, HIGH); // Set the servo pin high
+    delayMicroseconds(pulseWidth); // Wait for the calculated pulse width
+    digitalWrite(SERVO_PIN, LOW); // Set the servo pin low
+
+    if (currentPosition == targetPosition) { // If the servo reaches the target position
+      moving = false; // Set the moving flag to false
+    }
+  }
+}
