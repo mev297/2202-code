@@ -1,28 +1,39 @@
-#include <Servo.h>
 
 int pos = 0;
+unsigned long previousMillis = 0;
+const long interval = 15; // Interval at which to move servo (milliseconds)
+boolean increasing = true; // Direction of servo movement
 
-Servo servo_9;
-
-void setup()
-{
-  servo_9.attach(9, 500, 2500);
+void setup() {
+  myservo1.attach(9, 500, 2500);
 }
 
-void loop()
-{
-  // sweep the servo from 0 to 180 degrees in steps
-  // of 1 degrees
-  for (pos = 0; pos <= 60; pos += 1) {
-    // tell servo to go to position in variable 'pos'
-    servo_9.write(pos);
-    // wait 15 ms for servo to reach the position
-    delay(15); // Wait for 15 millisecond(s)
-  }
-  for (pos = 60; pos >= 0; pos -= 1) {
-    // tell servo to go to position in variable 'pos'
-    servo_9.write(pos);
-    // wait 15 ms for servo to reach the position
-    delay(15); // Wait for 15 millisecond(s)
-  }
-}
+void loop() {
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    // Save the last time the servo was updated
+    previousMillis = currentMillis;
+
+    // Move the servo to the next position
+    myservo1.write(pos);
+
+    // Update the position for the next move
+    if (increasing) {
+      pos++;
+      if (pos >= 180) {
+        increasing = false; // Change direction
+      }
+    } else {
+      pos--;
+      if (pos <= 0) {
+        increasing = true; // Change direction
+      }
+    }
+  
+} }
+
+
+
+
+
