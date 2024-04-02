@@ -85,14 +85,14 @@ void loop() {
    if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
   uint16_t r, g, b, c; // RGBC values from TCS34725
-
+  digitalWrite(cTCSLED, HIGH); // turn on onboard LED if switch state is low (on position)
   switch(robotIndex) {
     case 0: //arm is up
       //Bot.toPosition
+      robotIndex = 1;
       break;
 
     case 1: //robot detecting colour
-      digitalWrite(cTCSLED, !digitalRead(cLEDSwitch)); // turn on onboard LED if switch state is low (on position)
       if (tcsFlag) { // if colour sensor initialized
         tcs.getRawData(&r, &g, &b, &c); // get raw RGBC values
         // Print RGB values if required
@@ -100,6 +100,7 @@ void loop() {
       }
       // if statement for detecting the colours
       if (g > r || g == r) {
+        robotIndex=2;
         break;
       }
       // Additional code if needed
