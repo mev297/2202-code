@@ -48,7 +48,7 @@ const int cPotPin            = 1;                      // when DIP switch S1-3 i
 const int cToggle1           = 46;                     // DIP switch S1-2 turns stepper on/off  
 const int cStepRes           = 8;                      // bit resolution for stepper PWM stepper
 const int cStepFreq          = 100;                    // initial frequency of stepper PWM
-const long cDebounceDelay    = 20;                     // button debounce delay in milliseconds
+const unsigned long interval = 2500;                  // Time interval for direction change in milliseconds
 
 // Variables
 unsigned int robotIndex      = 0;
@@ -65,7 +65,6 @@ unsigned long lastHeartbeat  = 0;                      // time of last heartbeat
 unsigned long curMillis      = 0;                      // current time, in milliseconds
 unsigned long prevMillis     = 0;                      // start time for delay cycle, in milliseconds
 hw_timer_t * pTimer          = NULL;                   // pointer to timer used by timer interrupt
-boolean stepDir              = true;                   // step direction
 boolean runState             = false;                  // 0 = stopped; 1 = running
 unsigned long previousTime   = 0;                      // Previous time for direction change
 
@@ -148,10 +147,10 @@ void loop() {
       long freq = 1000000 / (stepRate * 2); // Convert step rate to frequency in Hz
       Serial.printf("Dir: %d, rate: %lu, freq: %ld Hz, count: %ld\n", clockwise, stepRate * 2, freq, stepCount);
       #endif
-      robotIndex = 4;
+     /* robotIndex = 4; */
       break;
 
-    case 4: //arm goes back up using servo 1
+   /* case 4: //arm goes back up using servo 1
       moveServo(0, SERVO_PIN_1);
       robotIndex = 5;
       break;
@@ -174,7 +173,7 @@ void loop() {
 
     default:
       // Handle invalid robotIndex value
-      break;
+      break; */
   }
 }
 
