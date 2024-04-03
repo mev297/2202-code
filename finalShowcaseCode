@@ -122,7 +122,7 @@ void loop() {
         Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
       }
       // if statement for detecting the colours
-      if (g > r || g == r) {
+      if ((g > r) || (g == r) ){
         robotIndex = 2;
         break;
       }
