@@ -17,7 +17,6 @@ void buttonISR(void* arg);
 void timerISR();
 long degreesToDutyCycle(int deg);
 void moveServo(int targetPosition, int servoPin);
-void checkSerialMonitor();
 
 // Button structure
 struct Button {
@@ -49,19 +48,13 @@ Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS,
 bool tcsFlag                 = true;
 int pos1 = 0; // Variable to store the position of the first servo motor
 int pos2 = 0; // Variable to store the position of the second servo motor
+long targetCounts;
 
 hw_timer_t * pTimer; // Declare pTimer
 
 void setup() {
-  Serial.begin(9600); // Initialize serial communication
-  checkSerialMonitor(); // Check if serial monitor is open
-
   pinMode(SERVO_PIN_1, OUTPUT); // Set the first servo pin as an output
   pinMode(SERVO_PIN_2, OUTPUT); // Set the second servo pin as an output
-  
-  pinMode(cStepPin, OUTPUT); // Set the step pin as an output
-  pinMode(cDirPin, OUTPUT);  // Set the direction pin as an output
-  
   // Initialize timer
   pTimer = timerBegin(0, 80, true); // Timer 0, prescaler 80, count up
   timerAttachInterrupt(pTimer, &timerISR, true); // Attach timer interrupt
@@ -110,10 +103,18 @@ void loop() {
       break;
 
     case 3: //stepper rotates 1.5 rev
-      stepperRunState = true; // Start the stepper motor
-      stepDir = true; // Set the direction
-      digitalWrite(cDirPin, stepDir); // Set direction pin
-      robotIndex = 4;
+      if (!stepperRunState && stepCount == 0) {
+        // Start the stepper motor movement if it's not already running and stepCount is 0
+        stepperRunState = true;
+        stepDir = true; // Set the direction
+        digitalWrite(cDirPin, stepDir); // Set direction pin
+        targetCounts = /* Calculate the target step counts */;
+      }
+      if (stepperRunState && stepCount >= targetCounts) {
+        // Stop the stepper motor movement if target step count is reached
+        stepperRunState = false;
+        robotIndex++; // Move to the next case only if task is completed
+      }
       break;
 
     case 4: //arm goes back up using servo 1
@@ -127,10 +128,18 @@ void loop() {
       break;
 
     case 6: //stepper rotates in the opposite direction to release the stone
-      stepperRunState = true; // Start the stepper motor
-      stepDir = false; // Reverse the direction
-      digitalWrite(cDirPin, stepDir); // Set direction pin
-      robotIndex = 7;
+      if (!stepperRunState && stepCount == 0) {
+        // Start the stepper motor movement if it's not already running and stepCount is 0
+        stepperRunState = true;
+        stepDir = false; // Reverse the direction
+        digitalWrite(cDirPin, stepDir); // Set direction pin
+        targetCounts = /* Calculate the target step counts */;
+      }
+      if (stepperRunState && stepCount <= -targetCounts) {
+        // Stop the stepper motor movement if target step count is reached
+        stepperRunState = false;
+        robotIndex++; // Move to the next case only if task is completed
+      }
       break;
 
     case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
@@ -194,13 +203,5 @@ void moveServo(int targetPosition, int servoPin) {
     if (currentPosition == targetPosition) { // If the servo reaches the target position
       moving = false; // Set the moving flag to false
     }
-  }
-}
-
-void checkSerialMonitor() {
-  if (Serial) {
-    Serial.println("Serial monitor is open.");
-  } else {
-    Serial.println("Serial monitor is not open.");
   }
 }
