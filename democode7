@@ -23,6 +23,21 @@ void moveServo(int targetPosition, int servoPin);
 void setMotor(int dir, int pwm, int in1, int in2);
 
 // Constants
+// Port pin constants
+#define LEFT_MOTOR_A        35                                                 // GPIO35 pin 28 (J35) Motor 1 A
+#define LEFT_MOTOR_B        36                                                 // GPIO36 pin 29 (J36) Motor 1 B
+#define RIGHT_MOTOR_A       37                                                 // GPIO37 pin 30 (J37) Motor 2 A
+#define RIGHT_MOTOR_B       38                                                 // GPIO38 pin 31 (J38) Motor 2 B
+#define ENCODER_LEFT_A      15                                                 // left encoder A signal is connected to pin 8 GPIO15 (J15)
+#define ENCODER_LEFT_B      16                                                 // left encoder B signal is connected to pin 8 GPIO16 (J16)
+#define ENCODER_RIGHT_A     11                                                 // right encoder A signal is connected to pin 19 GPIO11 (J11)
+#define ENCODER_RIGHT_B     12                                                 // right encoder B signal is connected to pin 20 GPIO12 (J12)
+#define MODE_BUTTON         0                                                  // GPIO0  pin 27 for Push Button 1
+#define MOTOR_ENABLE_SWITCH 3                                                  // DIP Switch S1-1 pulls Digital pin D3 to ground when on, connected to pin 15 GPIO3 (J3)
+#define POT_R1              1                                                  // when DIP Switch S1-3 is on, Analog AD0 (pin 39) GPIO1 is connected to Poteniometer R1
+#define SMART_LED           21                                                 // when DIP Switch S1-4 is on, Smart LED is connected to pin 23 GPIO21 (J21)
+#define SMART_LED_COUNT     1                                                  // number of SMART LEDs in use
+
 const int cHeartbeatInterval = 75;
 const int cSmartLED          = 21;
 const int cTCSLED            = 14;
