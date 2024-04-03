@@ -1,0 +1,294 @@
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <SPI.h>
+#include "Adafruit_TCS34725.h"
+
+#define DEBUG_DRIVE_SPEED    1
+#define DEBUG_ENCODER_COUNT  1
+#define SERVO_PIN_1 41 // Define the pin connected to the first servo motor
+#define SERVO_PIN_2 42 // Define the pin connected to the second servo motor
+#define SERVO_MIN_PULSE_WIDTH 544 // Minimum pulse width in microseconds
+#define SERVO_MAX_PULSE_WIDTH 2400 // Maximum pulse width in microseconds
+#define SERVO_MIN_ANGLE 0 // Minimum angle in degrees
+#define SERVO_MAX_ANGLE 180 // Maximum angle in degrees
+#define SERVO_MOVE_TIME 1000   // Time taken to move from min to max angle (in milliseconds)
+// Port pin constants
+#define LEFT_MOTOR_A        35                                                 // GPIO35 pin 28 (J35) Motor 1 A
+#define LEFT_MOTOR_B        36                                                 // GPIO36 pin 29 (J36) Motor 1 B
+#define RIGHT_MOTOR_A       37                                                 // GPIO37 pin 30 (J37) Motor 2 A
+#define RIGHT_MOTOR_B       38                                                 // GPIO38 pin 31 (J38) Motor 2 B
+#define ENCODER_LEFT_A      15                                                 // left encoder A signal is connected to pin 8 GPIO15 (J15)
+#define ENCODER_LEFT_B      16                                                 // left encoder B signal is connected to pin 8 GPIO16 (J16)
+#define ENCODER_RIGHT_A     11                                                 // right encoder A signal is connected to pin 19 GPIO11 (J11)
+#define ENCODER_RIGHT_B     12                                                 // right encoder B signal is connected to pin 20 GPIO12 (J12)
+#define MODE_BUTTON         0                                                  // GPIO0  pin 27 for Push Button 1
+#define MOTOR_ENABLE_SWITCH 3                                                  // DIP Switch S1-1 pulls Digital pin D3 to ground when on, connected to pin 15 GPIO3 (J3)
+#define POT_R1              1                                                  // when DIP Switch S1-3 is on, Analog AD0 (pin 39) GPIO1 is connected to Poteniometer R1
+#define SMART_LED           21                                                 // when DIP Switch S1-4 is on, Smart LED is connected to pin 23 GPIO21 (J21)
+#define SMART_LED_COUNT     1                                                  // number of SMART LEDs in use
+
+// Function declarations
+void buttonISR(void* arg);
+void timerISR();
+long degreesToDutyCycle(int deg);
+void moveServo(int targetPosition, int servoPin);
+void Indicator();                                                              // for mode/heartbeat on Smart LED
+void setMotor(int dir, int pwm, int in1, int in2);     
+void ARDUINO_ISR_ATTR encoderISR(void* arg);
+
+// Button structure
+struct Button {
+  const int pin;
+  unsigned int numberPresses;
+  unsigned long lastPressTime;
+  bool pressed;
+};
+
+// Encoder structure
+struct Encoder {
+   const int chanA;                                                            // GPIO pin for encoder channel A
+   const int chanB;                                                            // GPIO pin for encoder channel B
+   long pos;                                                                   // current encoder position
+};
+
+// Constants
+const int cHeartbeatInterval = 75;                    // heartbeat update interval, in milliseconds
+const int cSmartLED          = 21;                    // when DIP switch S1-4 is on, SMART LED is connected to GPIO21
+const int cTCSLED            = 14;
+const int cLEDSwitch         = 46;
+
+const int cSDA               = 47;                    // GPIO pin for I2C data
+const int cSCL               = 48;                    // GPIO pin for I2C clock
+const int cStepPin           = 40;
+const int cDirPin            = 39;
+const long cDebounceDelay    = 20;
+
+//constants for drive code
+const int cDisplayUpdate = 100;                                                // update interval for Smart LED in milliseconds
+const int cNumMotors = 2;                                                      // number of DC motors
+const int cIN1Pin[] = {LEFT_MOTOR_A, RIGHT_MOTOR_A};                           // GPIO pin(s) for INT1
+const int cIN1Chan[] = {0, 1};                                                 // PWM channe(s) for INT1
+const int c2IN2Pin[] = {LEFT_MOTOR_B, RIGHT_MOTOR_B};                          // GPIO pin(s) for INT2
+const int cIN2Chan[] = {2, 3};                                                 // PWM channel(s) for INT2
+const int cPWMRes = 8;                                                         // bit resolution for PWM
+const int cMinPWM = 150;                                                       // PWM value for minimum speed that turns motor
+const int cMaxPWM = pow(2, cPWMRes) - 1;                                       // PWM value for maximum speed
+const int cPWMFreq = 20000;                                                    // frequency of PWM signal
+const int cCountsRev = 1096;                                                   // encoder pulses per motor revolution
+// Variables
+unsigned int robotIndex      = 0;
+Button button                = {0, 0, 0, false};
+boolean stepDir              = true;
+volatile int32_t stepCount   = 0;
+boolean stepperRunState      = false;
+Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
+bool tcsFlag                 = true;
+int pos1 = 0; // Variable to store the position of the first servo motor
+int pos2 = 0; // Variable to store the position of the second servo motor
+//driving variables
+boolean motorsEnabled = true;                                                  // motors enabled flag
+boolean timeUp3sec = false;                                                    // 3 second timer elapsed flag
+boolean timeUp2sec = false;                                                    // 2 second timer elapsed flag
+unsigned char driveSpeed;                                                      // motor drive speed (0-255)
+unsigned char driveIndex;                                                      // state index for run mode
+unsigned int  modePBDebounce;                                                  // pushbutton debounce timer count
+unsigned long timerCount3sec = 0;                                              // 3 second timer count in milliseconds
+unsigned long timerCount2sec = 0;                                              // 2 second timer count in milliseconds
+unsigned long displayTime;                                                     // heartbeat LED update timer
+unsigned long previousMicros;                                                  // last microsecond count
+unsigned long currentMicros;                                                   // current microsecond count
+long targetCounts;
+long pauseStart;
+
+
+hw_timer_t * pTimer; // Declare pTimer
+
+void setup() {
+  pinMode(SERVO_PIN_1, OUTPUT); // Set the first servo pin as an output
+  pinMode(SERVO_PIN_2, OUTPUT); // Set the second servo pin as an output
+  // Initialize timer
+  pTimer = timerBegin(0, 80, true); // Timer 0, prescaler 80, count up
+  timerAttachInterrupt(pTimer, &timerISR, true); // Attach timer interrupt
+  timerAlarmWrite(pTimer, 1000, true); // 1 ms period
+  timerAlarmEnable(pTimer); // Enable the timer
+
+  Wire.setPins(cSDA, cSCL);                           // set I2C pins for TCS34725
+  pinMode(cTCSLED, OUTPUT);                           // configure GPIO to control LED on TCS34725
+  pinMode(cLEDSwitch, INPUT_PULLUP);                  // configure GPIO to set state of TCS34725 LED 
+   if (tcs.begin()) {
+    Serial.printf("Found TCS34725 colour sensor\n");
+    tcsFlag = true;
+  } 
+  else {
+    Serial.printf("No TCS34725 found ... check your connections\n");
+    tcsFlag = false;
+  }  
+}
+
+
+void loop() {
+  uint16_t r, g, b, c; // RGBC values from TCS34725
+  digitalWrite(cTCSLED, !digitalRead(cLEDSwitch)); 
+
+ currentMicros = micros();                                                   // get current time in microseconds
+  if ((currentMicros - previousMicros) >= 1000) {                             // enter when 1 ms has elapsed
+     previousMicros = currentMicros;                                          // record current time in microseconds
+
+
+     // 3 second timer, counts 3000 milliseconds
+     timerCount3sec = timerCount3sec + 1;                                     // increment 3 second timer count
+     if (timerCount3sec > 3000) {                                             // if 3 seconds have elapsed
+        timerCount3sec = 0;                                                   // reset 3 second timer count
+        timeUp3sec = true;                                                    // indicate that 3 seconds have elapsed
+     }
+  
+     // 2 second timer, counts 2000 milliseconds
+     timerCount2sec = timerCount2sec + 1;                                     // increment 2 second timer count
+     if (timerCount2sec > 2000) {                                             // if 2 seconds have elapsed
+        timerCount2sec = 0;                                                   // reset 2 second timer count
+        timeUp2sec = true;                                                    // indicate that 2 seconds have elapsed
+     } // turn on onboard LED if switch state is low (on position)
+  switch(robotIndex) {
+    case 0: //arm is up
+      robotIndex = 1;
+      break;
+
+    case 1: //robot detecting colour
+      if (tcsFlag) { // if colour sensor initialized
+        tcs.getRawData(&r, &g, &b, &c); // get raw RGBC values
+        // Print RGB values if required
+        Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+      }
+      // if statement for detecting the colours
+      if ((g > r) || (g == r) ){
+        robotIndex = 2;
+        break;
+      }
+      
+
+    case 2: //rotate arm down with servo 1
+      moveServo(60, SERVO_PIN_1);
+      if(pos1==6){
+        robotIndex = 3;
+        break;
+      }
+      
+
+    case 3: //stepper rotates 1.5 rev
+      stepperRunState = true; // Start the stepper motor
+      stepDir = true; // Set the direction
+      digitalWrite(cDirPin, stepDir); // Set direction pin
+      if (timeUp2sec) { 
+      robotIndex = 4;
+      } 
+      break;
+
+    case 4: //arm goes back up using servo 1
+      moveServo(0, SERVO_PIN_1);
+      if(pos1==0){
+        robotIndex = 5;
+        break;
+      }
+      
+
+    case 5: //servo 2 rotates more (in same direction as before) to bring to mounted container
+      moveServo(180, SERVO_PIN_2);
+      if(pos2==180){
+        robotIndex = 6;
+        break;
+      }
+      
+
+    case 6: //stepper rotates in the opposite direction to release the stone
+      stepperRunState = true; // Start the stepper motor
+      stepDir = false; // Reverse the direction
+      digitalWrite(cDirPin, stepDir); // Set direction pin
+      robotIndex = 7;
+      break;
+
+    case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
+      moveServo(0, SERVO_PIN_2);
+      if(pos2==0){
+        break;
+      }
+      
+
+    default:
+      // Handle invalid robotIndex value
+      Serial.printf("Invalid robot index");
+      break;
+  }
+}
+}
+
+void buttonISR(void* arg) {
+  Button* s = static_cast<Button*>(arg);
+  uint32_t pressTime = millis();
+  if (pressTime - s->lastPressTime > cDebounceDelay) {
+    s->numberPresses += 1;
+    s->pressed = true;
+    s->lastPressTime = pressTime;
+  }
+}
+
+void timerISR() {
+  unsigned long currentMillis = millis();
+
+  // Determine the direction based on the current time
+  boolean clockwise = (currentMillis / 2500) % 2 == 0;  // Alternate direction every 2.5 seconds
+
+  // Set the direction pin
+  digitalWrite(cDirPin, clockwise);
+
+  // Toggle step pin state
+  digitalWrite(cStepPin, !digitalRead(cStepPin));
+
+  // Update step count
+  if (clockwise) {
+    stepCount++;
+  } else {
+    stepCount--;
+  }
+
+  // Check if 3 seconds have elapsed
+  if (timeUp3sec) {
+    // Disable the stepper motor after 3 seconds
+    stepperRunState = false;
+    // Reset the timer flag
+    timeUp3sec = false;
+  }
+}
+
+long degreesToDutyCycle(int deg) {
+  const long cMinDutyCycle = 400;
+  const long cMaxDutyCycle = 2100;
+  long dutyCycle = map(deg, 0, 180, cMinDutyCycle, cMaxDutyCycle);
+  return dutyCycle;
+}
+
+void moveServo(int targetPosition, int servoPin) {
+  static unsigned long prevTime = 0;
+  static int currentPosition = 0;
+  static bool moving = false;
+
+  unsigned long currentTime = millis(); // Get the current time
+
+  if (!moving) { // If the servo is not currently moving
+    if (currentTime - prevTime >= SERVO_MOVE_TIME) { // Check if it's time to move again
+      moving = true; // Set the moving flag to true
+      prevTime = currentTime; // Update the previous time
+    }
+  } else { // If the servo is currently moving
+    int angleIncrement = (targetPosition - currentPosition) / (SERVO_MOVE_TIME / 20); // Calculate angle increment per update
+    currentPosition += angleIncrement; // Increment the current position
+    int pulseWidth = map(currentPosition, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE, SERVO_MIN_PULSE_WIDTH, SERVO_MAX_PULSE_WIDTH);
+    digitalWrite(servoPin, HIGH); // Set the servo pin high
+    delayMicroseconds(pulseWidth); // Wait for the calculated pulse width
+    digitalWrite(servoPin, LOW); // Set the servo pin low
+
+    if (currentPosition == targetPosition) { // If the servo reaches the target position
+      moving = false; // Set the moving flag to false
+    }
+  }
+}
