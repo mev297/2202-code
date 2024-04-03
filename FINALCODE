@@ -169,7 +169,7 @@ void loop() {
 
     case 2: //rotate arm down with servo 1
       moveServo(60, SERVO_PIN_1);
-      if(pos1==6){
+      if(pos1==60){
         robotIndex = 3;
         break;
       }
