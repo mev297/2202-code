@@ -1,6 +1,8 @@
 #include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
 #include <Wire.h>
-#include <Adafruit_TCS34725.h>
+#include <SPI.h>
+#include "Adafruit_TCS34725.h"
 
 #define SERVO_PIN_1 41 // Define the pin connected to the first servo motor
 #define SERVO_PIN_2 42 // Define the pin connected to the second servo motor
@@ -8,16 +10,14 @@
 #define SERVO_MAX_PULSE_WIDTH 2400 // Maximum pulse width in microseconds
 #define SERVO_MIN_ANGLE 0 // Minimum angle in degrees
 #define SERVO_MAX_ANGLE 180 // Maximum angle in degrees
-#define SERVO_MOVE_TIME 1000 // Time taken to move from min to max angle (in milliseconds)
-
-// Stepper motor control pins
-const int cStepPin = 40;
-const int cDirPin = 39;
+#define SERVO_MOVE_TIME 1000   // Time taken to move from min to max angle (in milliseconds)
 
 // Function declarations
 void buttonISR(void* arg);
 void timerISR();
+long degreesToDutyCycle(int deg);
 void moveServo(int targetPosition, int servoPin);
+void checkSerialMonitor();
 
 // Button structure
 struct Button {
@@ -28,45 +28,60 @@ struct Button {
 };
 
 // Constants
-const int cDebounceDelay = 20;
+const int cHeartbeatInterval = 75;                    // heartbeat update interval, in milliseconds
+const int cSmartLED          = 21;                    // when DIP switch S1-4 is on, SMART LED is connected to GPIO21
+const int cTCSLED            = 14;
+const int cLEDSwitch         = 46;
+
+const int cSDA               = 47;                    // GPIO pin for I2C data
+const int cSCL               = 48;                    // GPIO pin for I2C clock
+const int cStepPin           = 40;
+const int cDirPin            = 39;
+const long cDebounceDelay    = 20;
 
 // Variables
-Button button = {0, 0, 0, false};
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
-bool tcsFlag = true;
-unsigned int robotIndex = 0;
-volatile int32_t stepCount = 0;
-boolean stepperRunState = false;
+unsigned int robotIndex      = 0;
+Button button                = {0, 0, 0, false};
+boolean stepDir              = true;
+volatile int32_t stepCount   = 0;
+boolean stepperRunState      = false;
+Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
+bool tcsFlag                 = true;
+int pos1 = 0; // Variable to store the position of the first servo motor
+int pos2 = 0; // Variable to store the position of the second servo motor
 
-hw_timer_t* pTimer; // Declare pTimer
+hw_timer_t * pTimer; // Declare pTimer
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); // Initialize serial communication
+  checkSerialMonitor(); // Check if serial monitor is open
 
   pinMode(SERVO_PIN_1, OUTPUT); // Set the first servo pin as an output
   pinMode(SERVO_PIN_2, OUTPUT); // Set the second servo pin as an output
-
   // Initialize timer
   pTimer = timerBegin(0, 80, true); // Timer 0, prescaler 80, count up
   timerAttachInterrupt(pTimer, &timerISR, true); // Attach timer interrupt
   timerAlarmWrite(pTimer, 1000, true); // 1 ms period
   timerAlarmEnable(pTimer); // Enable the timer
 
-  Wire.begin(); // Initialize I2C communication
-
-  if (tcs.begin()) {
-    Serial.println("Found TCS34725 colour sensor");
+  Wire.setPins(cSDA, cSCL);                           // set I2C pins for TCS34725
+  pinMode(cTCSLED, OUTPUT);                           // configure GPIO to control LED on TCS34725
+  pinMode(cLEDSwitch, INPUT_PULLUP);                  // configure GPIO to set state of TCS34725 LED 
+   if (tcs.begin()) {
+    Serial.printf("Found TCS34725 colour sensor\n");
     tcsFlag = true;
-  } else {
-    Serial.println("No TCS34725 found ... check your connections");
+  } 
+  else {
+    Serial.printf("No TCS34725 found ... check your connections\n");
     tcsFlag = false;
-  }
+  }  
 }
+
 
 void loop() {
   uint16_t r, g, b, c; // RGBC values from TCS34725
-
-  switch (robotIndex) {
+  digitalWrite(cTCSLED, !digitalRead(cLEDSwitch)); // turn on onboard LED if switch state is low (on position)
+  switch(robotIndex) {
     case 0: //arm is up
       robotIndex = 1;
       break;
@@ -74,12 +89,15 @@ void loop() {
     case 1: //robot detecting colour
       if (tcsFlag) { // if colour sensor initialized
         tcs.getRawData(&r, &g, &b, &c); // get raw RGBC values
+        // Print RGB values if required
         Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
       }
       // if statement for detecting the colours
       if (g > r || g == r) {
         robotIndex = 2;
+        break;
       }
+      // Additional code if needed
       break;
 
     case 2: //rotate arm down with servo 1
@@ -89,6 +107,8 @@ void loop() {
 
     case 3: //stepper rotates 1.5 rev
       stepperRunState = true; // Start the stepper motor
+      stepDir = true; // Set the direction
+      digitalWrite(cDirPin, stepDir); // Set direction pin
       robotIndex = 4;
       break;
 
@@ -104,6 +124,9 @@ void loop() {
 
     case 6: //stepper rotates in the opposite direction to release the stone
       stepperRunState = true; // Start the stepper motor
+      stepDir = false; // Reverse the direction
+      digitalWrite(cDirPin, stepDir); // Set direction pin
+      robotIndex = 7;
       break;
 
     case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
@@ -129,8 +152,19 @@ void buttonISR(void* arg) {
 void timerISR() {
   if (stepperRunState) {
     digitalWrite(cStepPin, !digitalRead(cStepPin));
-    stepCount++;
+    if (stepDir) {
+      stepCount++;
+    } else {
+      stepCount--;
+    }
   }
+}
+
+long degreesToDutyCycle(int deg) {
+  const long cMinDutyCycle = 400;
+  const long cMaxDutyCycle = 2100;
+  long dutyCycle = map(deg, 0, 180, cMinDutyCycle, cMaxDutyCycle);
+  return dutyCycle;
 }
 
 void moveServo(int targetPosition, int servoPin) {
@@ -156,5 +190,13 @@ void moveServo(int targetPosition, int servoPin) {
     if (currentPosition == targetPosition) { // If the servo reaches the target position
       moving = false; // Set the moving flag to false
     }
+  }
+}
+
+void checkSerialMonitor() {
+  if (Serial) {
+    Serial.println("Serial monitor is open.");
+  } else {
+    Serial.println("Serial monitor is not open.");
   }
 }
