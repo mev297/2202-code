@@ -47,7 +47,7 @@ boolean stepperRunState      = false;
 Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
 bool tcsFlag                 = true;
 int pos1 = 0; // Variable to store the position of the first servo motor
-int pos2 = 0; // Variable to store the position of the second servo motor
+int pos2 = 180; // Variable to store the position of the second servo motor
 boolean motorsEnabled = true;                                                  // motors enabled flag
 boolean timeUp3sec = false;                                                    // 3 second timer elapsed flag
 boolean timeUp2sec = false;                                                    // 2 second timer elapsed flag
@@ -154,8 +154,8 @@ void loop() {
       
 
     case 5: //servo 2 rotates more (in same direction as before) to bring to mounted container
-      moveServo(180, SERVO_PIN_2);
-      if(pos2==180){
+      moveServo(0, SERVO_PIN_2);
+      if(pos2==0){
         robotIndex = 6;
         break;
       }
@@ -169,8 +169,8 @@ void loop() {
       break;
 
     case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
-      moveServo(0, SERVO_PIN_2);
-      if(pos2==0){
+      moveServo(180, SERVO_PIN_2);
+      if(pos2==180){
         break;
       }
       
