@@ -1,33 +1,52 @@
 
-/*
- * HC-SR04 example sketch
- *
- * https://create.arduino.cc/projecthub/Isaac100/getting-started-with-the-hc-sr04-ultrasonic-sensor-036380
- *
- * by Isaac100
- */
+// this sketch should isolate the implemented ultrasonic functionality in our MSE 2202 Final Project design
+// the ultrasonic is used to detec the deposit bins
 
-const int trigPin = 9;
-const int echoPin = 10;
+// define pins
+#define LEFT_MOTOR_A        35                                                 // GPIO35 pin 28 (J35) Motor 1 A
+#define LEFT_MOTOR_B        36                                                 // GPIO36 pin 29 (J36) Motor 1 B
+#define RIGHT_MOTOR_A       37                                                 // GPIO37 pin 30 (J37) Motor 2 A
+#define RIGHT_MOTOR_B       38                                                 // GPIO38 pin 31 (J38) Motor 2 B
+#define trigPin             9                                                  // GPIO9 HR-SC04 trig
+#define echoPin             10                                                 // GPIO10 HR-SC04 echo
 
-float duration, distance;
+// constants
+
+// variables
+long duration;
+int distance;
+
+// motor and encoder object instances
+Motion Bot = Motion();                                                         // Instance of Motion for motor control
+Encoders LeftEncoder = Encoders();                                             // Instance of Encoders for left encoder data
+Encoders RightEncoder = Encoders();                                            // Instance of Encoders for right encoder data
 
 void setup() {
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  Serial.begin(9600);
+
+  Bot.driveBegin("D1", LEFT_MOTOR_A, LEFT_MOTOR_B, RIGHT_MOTOR_A, RIGHT_MOTOR_B);
+  LeftEncoder.Begin(ENCODER_LEFT_A, ENCODER_LEFT_B, &Bot.iLeftMotorRunning ); // set up left encoder
+  RightEncoder.Begin(ENCODER_RIGHT_A, ENCODER_RIGHT_B, &Bot.iRightMotorRunning ); // set up right encoder
+
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  Serial.begin(115200);
+
 }
 
 void loop() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
+  // Sets the trigPin on HIGH state for 10 micro seconds
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-
+  // Reads the echoPin, returns the sound wave travel time in microseconds
   duration = pulseIn(echoPin, HIGH);
-  distance = (duration*.0343)/2;
+  // calculate the distance
+  // time * speed / 2 (because waves bounce back and forth)
+  distance = duration * 0.034 / 2;
+  // Prints the distance on the Serial Monitor
   Serial.print("Distance: ");
   Serial.println(distance);
-  delay(100);
+
 }
