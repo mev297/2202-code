@@ -1,0 +1,194 @@
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <SPI.h>
+#include "Adafruit_TCS34725.h"
+
+#define SERVO_PIN_1 41
+#define SERVO_PIN_2 42
+#define SERVO_MIN_PULSE_WIDTH 544
+#define SERVO_MAX_PULSE_WIDTH 2400
+#define SERVO_MIN_ANGLE 0
+#define SERVO_MAX_ANGLE 180
+#define SERVO_MOVE_TIME 1000
+
+// Function declarations
+void ARDUINO_ISR_ATTR buttonISR(void* arg);
+void ARDUINO_ISR_ATTR timerISR();
+long degreesToDutyCycle(int deg);
+void moveServo(int targetPosition, int servoPin);
+
+// Button structure
+struct Button {
+  const int pin;
+  unsigned int numberPresses;
+  unsigned long lastPressTime;
+  bool pressed;
+};
+
+// Constants
+const int cHeartbeatInterval = 75;
+const int cSmartLED          = 21;
+const int cTCSLED            = 14;
+const int cLEDSwitch         = 46;
+const int cSDA               = 47;
+const int cSCL               = 48;
+const int cStepPin           = 40;
+const int cDirPin            = 39;
+const int cStepRes           = 8;
+const int cStepFreq          = 100;
+const long cDebounceDelay    = 20;
+
+// Variables
+unsigned int robotIndex      = 0;
+Button button                = {0, 0, 0, false};
+boolean stepDir              = true;
+volatile int32_t stepCount   = 0;
+boolean stepperRunState      = false;
+Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
+bool tcsFlag                 = true;
+int pos1 = 0;
+int pos2 = 0;
+
+hw_timer_t * pTimer;
+
+void setup() {
+  pinMode(SERVO_PIN_1, OUTPUT);
+  pinMode(SERVO_PIN_2, OUTPUT);
+  pinMode(cStepPin, OUTPUT);
+  pinMode(cDirPin, OUTPUT);
+  pinMode(button.pin, INPUT_PULLUP);
+  attachInterruptArg(button.pin, buttonISR, &button, FALLING);
+
+  pTimer = timerBegin(0, 80, true);
+  timerAttachInterrupt(pTimer, &timerISR, true);
+  timerAlarmWrite(pTimer, 1000, true);
+  timerAlarmEnable(pTimer);
+
+  Wire.setPins(cSDA, cSCL);
+  pinMode(cTCSLED, OUTPUT);
+  pinMode(cLEDSwitch, INPUT_PULLUP);
+  if (tcs.begin()) {
+    Serial.printf("Found TCS34725 colour sensor\n");
+    tcsFlag = true;
+  } else {
+    Serial.printf("No TCS34725 found ... check your connections\n");
+    tcsFlag = false;
+  }
+}
+
+void loop() {
+  uint16_t r, g, b, c;
+  digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
+  switch(robotIndex) {
+    case 0:
+      robotIndex = 1;
+      break;
+
+    case 1:
+      if (tcsFlag) {
+        tcs.getRawData(&r, &g, &b, &c);
+        Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+      }
+      if (g > r || g == r) {
+        robotIndex = 2;
+      }
+      break;
+
+    case 2:
+      moveServo(60, SERVO_PIN_1);
+      robotIndex = 3;
+      break;
+
+    case 3:
+      stepperRunState = true;
+      stepDir = true;
+      digitalWrite(cDirPin, stepDir);
+      if (button.pressed) {
+        stepDir = !stepDir;
+        button.pressed = false;
+      }
+      digitalWrite(cDirPin, stepDir);
+      robotIndex = 4;
+      break;
+
+    case 4:
+      moveServo(0, SERVO_PIN_1);
+      robotIndex = 5;
+      break;
+
+    case 5:
+      moveServo(180, SERVO_PIN_2);
+      robotIndex = 6;
+      break;
+
+    case 6:
+      stepperRunState = true;
+      stepDir = false;
+      digitalWrite(cDirPin, stepDir);
+      if (button.pressed) {
+        stepDir = !stepDir;
+        button.pressed = false;
+      }
+      digitalWrite(cDirPin, stepDir);
+      robotIndex = 7;
+      break;
+
+    case 7:
+      moveServo(0, SERVO_PIN_2);
+      break;
+  }
+}
+
+void ARDUINO_ISR_ATTR buttonISR(void* arg) {
+  Button* s = static_cast<Button*>(arg);
+  uint32_t pressTime = millis();
+  if (pressTime - s->lastPressTime > cDebounceDelay) {
+    s->numberPresses += 1;
+    s->pressed = true;
+    s->lastPressTime = pressTime;
+  }
+}
+
+void ARDUINO_ISR_ATTR timerISR() {
+  if (stepperRunState) {
+    digitalWrite(cStepPin, !digitalRead(cStepPin));
+    if (stepDir) {
+      stepCount++;
+    } else {
+      stepCount--;
+    }
+  }
+}
+
+long degreesToDutyCycle(int deg) {
+  const long cMinDutyCycle = 400;
+  const long cMaxDutyCycle = 2100;
+  long dutyCycle = map(deg, 0, 180, cMinDutyCycle, cMaxDutyCycle);
+  return dutyCycle;
+}
+
+void moveServo(int targetPosition, int servoPin) {
+  static unsigned long prevTime = 0;
+  static int currentPosition = 0;
+  static bool moving = false;
+
+  unsigned long currentTime = millis();
+  if (!moving) {
+    if (currentTime - prevTime >= SERVO_MOVE_TIME) {
+      moving = true;
+      prevTime = currentTime;
+    }
+  } else {
+    int angleIncrement = (targetPosition - currentPosition) / (SERVO_MOVE_TIME / 20);
+    currentPosition += angleIncrement;
+    int pulseWidth = map(currentPosition, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE, SERVO_MIN_PULSE_WIDTH, SERVO_MAX_PULSE_WIDTH);
+    digitalWrite(servoPin, HIGH);
+    delayMicroseconds(pulseWidth);
+    digitalWrite(servoPin, LOW);
+
+    if (currentPosition == targetPosition) {
+      moving = false;
+    }
+  }
+}
