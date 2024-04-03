@@ -122,14 +122,14 @@ void loop() {
       robotIndex = 6;
       break;
 
-    case 6: //stepper rotates in the opposite direction to release the stone
+    /*case 6: //stepper rotates in the opposite direction to release the stone
       stepperRunState = true; // Start the stepper motor
       stepDir = false; // Reverse the direction
       digitalWrite(cDirPin, stepDir); // Set direction pin
       robotIndex = 7;
       break;
-
-    case 7: //servo 2 rotates more (in same direction as before) to bring to mounted container
+    */
+    case 6: //servo 2 rotates more (in same direction as before) to bring to mounted container
       moveServo(0, SERVO_PIN_2);
       break;
 
