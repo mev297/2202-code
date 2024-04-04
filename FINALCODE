@@ -332,7 +332,7 @@ void loop()
                            setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
                            numRep++;
-                           if(numRep>=4){
+                           if(numRep>=3){
                             uint16_t r, g, b, c;
                             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
                             switch(robotIndex){
