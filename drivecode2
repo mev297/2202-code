@@ -57,8 +57,8 @@ boolean timeUp5sec = false;                                                    /
 unsigned char driveSpeed;                                                      // motor drive speed (0-255)
 unsigned char driveIndex;                                                      // state index for run mode
 unsigned int  modePBDebounce;                                                  // pushbutton debounce timer count
-unsigned long timerCount3sec = 0;                                              // 3 second timer count in milliseconds
-unsigned long timerCount2sec = 0;                                              // 2 second timer count in milliseconds
+unsigned long timerCount10sec = 0;                                              // 3 second timer count in milliseconds
+unsigned long timerCount5sec = 0;                                              // 2 second timer count in milliseconds
 unsigned long displayTime;                                                     // heartbeat LED update timer
 unsigned long previousMicros;                                                  // last microsecond count
 unsigned long currentMicros;                                                   // current microsecond count
