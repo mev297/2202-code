@@ -92,7 +92,7 @@ boolean stepDir              = true;
 volatile int32_t stepCount   = 0;
 boolean stepperRunState      = false;
 unsigned long stepperStartTime = 0; // Start time for the stepper operation
-unsigned long servoToStepperStartTime = 0; // Start time for the delay between servo and stepper
+unsigned long colourToStepperStartTime = 0; // Start time for the delay between servo and stepper
 Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_4X);
 bool tcsFlag                 = true;
 int pos1 = 0;
@@ -332,22 +332,20 @@ void loop()
                            setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
                            numRep++;
-                           if(numRep>=3){
+                           if(numRep>=1){//increase this value for showcase
                             uint16_t r, g, b, c;
                             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
                             switch(robotIndex){
                               
-                              //ADD A CASE ABOVE THIS TO TURN THE THIRD SERVO
+                                //ADD A CASE ABOVE THIS TO TURN THE THIRD SERVO
                               case 0: //drive forward 2 cm, must adjust distance
                                 setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
                                 setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
-                                break;
                                 robotIndex = 1;
                                 break;
 
                               case 1://moves servo 1 down
                                 moveServo(60, SERVO_PIN_1);
-                                servoToStepperStartTime = millis();
                                 robotIndex = 2;
                                 break;
                                 
@@ -363,10 +361,11 @@ void loop()
                                 else{
                                   robotIndex=0;
                                 }
+                                colourToStepperStartTime = millis();
                                 break;
 
-                              case 3:
-                                if (millis() - servoToStepperStartTime >= SERVO_TO_STEPPER_DELAY) {
+                              case 3: //stepper turns
+                                if (millis() - colourToStepperStartTime >= SERVO_TO_STEPPER_DELAY) {
                                   stepperRunState = true;
                                   stepDir = true;
                                   digitalWrite(cDirPin, stepDir);
@@ -375,28 +374,24 @@ void loop()
                                 }
                                 break;
 
-                              case 4:
+                              case 4: //servo 2 turns
                                 if (millis() - stepperStartTime >= STEPPER_DURATION) {
                                   stepperRunState = false;
-                                  moveServo(0, SERVO_PIN_1);
+                                  moveServo(180, SERVO_PIN_2);
                                   robotIndex = 5;
                                 }
                                 break;
+                   
 
                               case 5:
-                                moveServo(180, SERVO_PIN_2);
-                                robotIndex = 6;
-                                break;
-
-                              case 6:
                                 stepperRunState = true;
                                 stepDir = false;
                                 digitalWrite(cDirPin, stepDir);
                                 stepperStartTime = millis();
-                                robotIndex = 7;
+                                robotIndex = 6;
                                 break;
 
-                              case 7:
+                              case 6:
                                 if (millis() - stepperStartTime >= STEPPER_DURATION) {
                                   stepperRunState = false;
                                   moveServo(0, SERVO_PIN_2);
