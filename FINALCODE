@@ -76,12 +76,12 @@ const long cDebounceDelay    = 20;
 // Variables
 boolean motorsEnabled = true;                                                  // motors enabled flag
 boolean timeUp10sec = false;                                                    // 3 second timer elapsed flag
-boolean timeUp5sec = false;                                                    // 2 second timer elapsed flag
+boolean timeUp1sec = false;                                                    // 2 second timer elapsed flag
 unsigned char driveSpeed;                                                      // motor drive speed (0-255)
 unsigned char driveIndex;                                                      // state index for run mode
 unsigned int  modePBDebounce;                                                  // pushbutton debounce timer count
 unsigned long timerCount10sec = 0;                                              // 3 second timer count in milliseconds
-unsigned long timerCount5sec = 0;                                              // 2 second timer count in milliseconds
+unsigned long timerCount1sec = 0;                                              // 2 second timer count in milliseconds
 unsigned long displayTime;                                                     // heartbeat LED update timer
 unsigned long previousMicros;                                                  // last microsecond count
 unsigned long currentMicros;                                                   // current microsecond count
@@ -195,10 +195,10 @@ void loop()
       }
    
       // 5 second timer, counts 5000 milliseconds
-      timerCount5sec = timerCount5sec + 1;                                     // increment 2 second timer count
-      if (timerCount5sec > 5000) {                                             // if 2 seconds have elapsed
-         timerCount5sec = 0;                                                   // reset 2 second timer count
-         timeUp5sec = true;                                                    // indicate that 2 seconds have elapsed
+      timerCount1sec = timerCount1sec + 1;                                     // increment 2 second timer count
+      if (timerCount1sec > 1000) {                                             // if 2 seconds have elapsed
+         timerCount1sec = 0;                                                   // reset 2 second timer count
+         timeUp1sec = true;                                                    // indicate that 2 seconds have elapsed
       }
    
       // Mode pushbutton debounce and toggle
@@ -244,7 +244,7 @@ void loop()
             encoder[0].pos = 0;                                                // clear left encoder
             encoder[1].pos = 0;                                                // clear right encoder
             driveIndex = 0;                                                    // reset drive index
-            timeUp5sec = false;                                                // reset 2 second timer
+            timeUp1sec = false;                                                // reset 2 second timer
             break;
 
          case 1: // Run robot
@@ -265,8 +265,8 @@ void loop()
                Serial.println(pos[1]);
 #endif
                if (motorsEnabled) {                                            // run motors only if enabled
-                  if (timeUp5sec) {                                            // update drive state after 2 seconds
-                     timeUp5sec = false;                                       // reset 2 second timer
+                  if (timeUp1sec) {                                            // update drive state after 2 seconds
+                     timeUp1sec = false;                                       // reset 2 second timer
                      switch(driveIndex) {                                      // cycle through drive states
                         case 0: // Stop
                             setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);           // stop left motor
@@ -285,54 +285,308 @@ void loop()
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
                            driveIndex = 3;                                     // next state: turn right
                            break;
-
-                        case 3: // Turn right 90 degrees 
-                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
-                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
-                           driveIndex = 4;                                     // next state: drive forward
-                           break;
-
-                        case 4: // Drive forward
+                           
+                        case 3: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
                            setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
-                           driveIndex = 5;                                     // next state: turn right 
+                           driveIndex = 4;                                     // next state: turn right
                            break;
 
-                        case 5: // Turn right
-                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
-                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
-                           driveIndex = 6;                                     // next state: drive forward
+                        case 4: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 5;                                     // next state: drive forward
                            break;
-                        
-                        case 6: // drive forward
+
+                        case 5: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 6;                                     // next state: turn right
+                           break;
+                           
+                        case 6: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
                            setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
                            driveIndex = 7;                                     // next state: drive forward
                            break;
-                        
-                        case 7: // drive forward
+
+                        case 7: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
                            setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
-                           driveIndex = 8;                                     // next state: turn right 
+                           driveIndex = 8;                                     // next state: turn right
                            break;
-                        
-                        case 8: // turn right
-                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
-                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
-                           driveIndex = 9;                                     // next state: drive forward
+                           
+                        case 8: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 9;                                     // next state: turn right
                            break;
 
-                        case 9: // drive forward
+                        case 9: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
                            setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
-                           driveIndex = 10;                                     // next state: turn right
+                           driveIndex = 10;                                     // next state: drive forward
                            break;
-                        
-                        case 10: // turn right
+
+                        case 10: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 11;                                     // next state: turn right
+                           break;
+
+                        case 11: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 12;                                     // next state: drive forward
+                           break;
+
+                        case 12: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 13;                                     // next state: turn right
+                           break;
+
+                        case 13: // Turn right 90 degrees 
                            setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
                            setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
-                           numRep++;
-                           if(numRep>=1){//increase this value for showcase
+                           driveIndex = 14;                                     // next state: drive forward
+                           break;
+
+                        case 14: // Drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 15;                                     // next state: turn right 
+                           break;
+
+                        case 15: // Drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 16;                                     // next state: turn right 
+                           break;
+                        
+                        case 16: // Drive forward
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 17;                                     // next state: turn right 
+                           break;
+
+                        case 17: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 18;                                     // next state: drive forward
+                           break;
+
+                        case 18: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 19;                                     // next state: turn right
+                           break;
+                           
+                        case 19: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 20;                                     // next state: drive forward
+                           break;
+
+                        case 20: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 21;                                     // next state: turn right
+                           break;
+                           
+                        case 21: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 22;                                     // next state: turn right
+                           break;
+
+                        case 22: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 23;                                     // next state: drive forward
+                           break;
+
+                        case 23: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 24;                                     // next state: turn right
+                           break;
+
+                        case 24: // Turn right
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 25;                                     // next state: drive forward
+                           break;
+                        
+                        case 25: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 26;                                     // next state: drive forward
+                           break;
+
+                        case 26: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 27;                                     // next state: turn right
+                           break;
+                           
+                        case 27: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 28;                                     // next state: turn right
+                           break;
+
+                        case 28: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 29;                                     // next state: drive forward
+                           break;
+
+                        
+                        case 29: // Turn right 90 degrees 
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 30;                                     // next state: drive forward
+                           break;
+                        
+                        case 30: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 31;                                     // next state: drive forward
+                           break;
+
+                        case 31: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 32;                                     // next state: turn right
+                           break;
+                           
+                        case 32: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 33;                                     // next state: turn right
+                           break;
+
+                        case 33: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 34;                                     // next state: drive forward
+                           break;
+
+                        case 34: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 35;                                     // next state: drive forward
+                           break;
+
+                        case 35: // Turn left 90 degrees 
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 36;                                     // next state: drive forward
+                           break;
+
+                        case 36: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 37;                                     // next state: turn right
+                           break;
+                           
+                        case 37: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 38;                                     // next state: turn right
+                           break;
+
+                        case 38: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 39;                                     // next state: drive forward
+                           break;
+
+                        case 39: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 40;                                     // next state: drive forward
+                           break;
+                        
+                        case 40: // Turn left 90 degrees 
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 41;                                     // next state: drive forward
+                           break;
+                        
+                        case 41: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 42;                                     // next state: drive forward
+                           break;
+
+                        case 42: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 43;                                     // next state: turn right
+                           break;
+                           
+                        case 43: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 44;                                     // next state: turn right
+                           break;
+
+                        case 44: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 45;                                     // next state: drive forward
+                           break;
+
+                        case 45: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 46;                                     // next state: drive forward
+                           break;
+
+                        case 46: // Turn right 90 degrees 
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 47;                                     // next state: drive forward
+                           break;
+
+                        case 47: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 48;                                     // next state: turn right
+                           break;
+                           
+                        case 48: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 49;                                     // next state: turn right
+                           break;
+
+                        case 49: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 50;                                     // next state: drive forward
+                           break;
+
+                        case 50: // Drive forward — motors spin in opposite directions as they are opposed by 180 degrees
+                           setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                           driveIndex = 51;                                     // next state: drive forward
+                           break;
+
+                        case 51: // Turn right 90 degrees 
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                           driveIndex = 52;                                     // next state: drive forward
+                           break;
+                        
+                        //ADD SERVO CODE FOR OPENING, MUST MOVE 10 MORE SECONDS WHILE CHECKING A STONE EVERY SECOND
+                        case 52: // turn right
+                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
+                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
+                          
+                           if(numRep==0){//increase this value for showcase
                             uint16_t r, g, b, c;
                             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
                             switch(robotIndex){
