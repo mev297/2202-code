@@ -245,7 +245,11 @@ void loop()
             encoder[0].pos = 0;                                                // clear left encoder
             encoder[1].pos = 0;                                                // clear right encoder
             driveIndex = 0;                                                    // reset drive index
-            timeUp1sec = false;                                                // reset 2 second timer
+            timeUp1sec = false; 
+              
+             if(numRep==0){//increase this value for showcase
+            uint16_t r, g, b, c;
+             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));                                             // reset 2 second timer
             break;
 
          case 1: // Run robot
@@ -654,7 +658,7 @@ void loop()
                                 robotIndex = 0;
                                 /* if(timer90Up){
                                   add servo 4 functionality to raise the collection container and deposit stones into the bin
-                                }  }
+                                } */ }
       displayTime++;                                                          // count milliseconds
       if (displayTime > cDisplayUpdate) {                                     // when display update period has passed
          displayTime = 0;                                                     // reset display counter
@@ -667,7 +671,7 @@ void loop()
       }
    }
 }   
-
+}
 // Set colour of Smart LED depending on robot mode (and update brightness)
 void Indicator() {
   SmartLEDs.setPixelColor(0, modeIndicator[robotModeIndex]);                  // set pixel colors to = mode 
