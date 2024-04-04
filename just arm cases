@@ -1,0 +1,58 @@
+switch(robotIndex) {
+    case 0: //drive forward 2 cm, must adjust distance
+      setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+      setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+      robotIndex = 1;
+      break;
+
+    case 1:
+      moveServo(60, SERVO_PIN_1);
+      robotIndex = 2;
+      break;
+
+    case 2:
+      if (tcsFlag) {
+        tcs.getRawData(&r, &g, &b, &c);
+        Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+      }
+      if (g > r || g == r) {
+        robotIndex = 3;
+      }
+      colourToStepperStartTime = millis();
+      break;
+
+
+    case 3:
+      if (millis() - colourToStepperStartTime >= SERVO_TO_STEPPER_DELAY) {
+        stepperRunState = true;
+        stepDir = true;
+        digitalWrite(cDirPin, stepDir);
+        stepperStartTime = millis();
+        robotIndex = 4;
+      }
+      break;
+
+    case 4:
+      if (millis() - stepperStartTime >= STEPPER_DURATION) {
+        stepperRunState = false;
+        moveServo(0, SERVO_PIN_1);
+        robotIndex = 5;
+      }
+      break;
+
+
+    case 5:
+      stepperRunState = true;
+      stepDir = false;
+      digitalWrite(cDirPin, stepDir);
+      stepperStartTime = millis();
+      robotIndex = 6;
+      break;
+
+    case 6:
+      if (millis() - stepperStartTime >= STEPPER_DURATION) {
+        stepperRunState = false;
+        moveServo(0, SERVO_PIN_2);
+      }
+      break;
+  }
