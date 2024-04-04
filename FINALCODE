@@ -1,3 +1,4 @@
+
 //importing libraries
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
@@ -335,6 +336,8 @@ void loop()
                             uint16_t r, g, b, c;
                             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
                             switch(robotIndex){
+                              
+                              //ADD A CASE ABOVE THIS TO TURN THE THIRD SERVO
                               case 0: //drive forward 2 cm, must adjust distance
                                 setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
                                 setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
@@ -399,6 +402,11 @@ void loop()
                                   moveServo(0, SERVO_PIN_2);
                                 }
                                 robotIndex = 0;
+                                /* if(timer90Up){
+                                  add servo 4 functionality to raise the collection container and deposit stones into the bin
+                                }
+                                */
+
                                 break;
                            }
                            
