@@ -53,12 +53,12 @@ const int cCountsRev = 1096;                                                   /
 // Variables
 boolean motorsEnabled = true;                                                  // motors enabled flag
 boolean timeUp10sec = false;                                                    // 3 second timer elapsed flag
-boolean timeUp5sec = false;                                                    // 2 second timer elapsed flag
+boolean timeUp1sec = false;                                                    // 2 second timer elapsed flag
 unsigned char driveSpeed;                                                      // motor drive speed (0-255)
 unsigned char driveIndex;                                                      // state index for run mode
 unsigned int  modePBDebounce;                                                  // pushbutton debounce timer count
 unsigned long timerCount10sec = 0;                                              // 3 second timer count in milliseconds
-unsigned long timerCount5sec = 0;                                              // 2 second timer count in milliseconds
+unsigned long timerCount1sec = 0;                                              // 2 second timer count in milliseconds
 unsigned long displayTime;                                                     // heartbeat LED update timer
 unsigned long previousMicros;                                                  // last microsecond count
 unsigned long currentMicros;                                                   // current microsecond count
@@ -144,11 +144,11 @@ void loop()
          timeUp10sec = true;                                                    // indicate that 3 seconds have elapsed
       }
    
-      // 5 second timer, counts 5000 milliseconds
-      timerCount5sec = timerCount2sec + 1;                                     // increment 2 second timer count
-      if (timerCount5sec > 5000) {                                             // if 2 seconds have elapsed
-         timerCount5sec = 0;                                                   // reset 2 second timer count
-         timeUp5sec = true;                                                    // indicate that 2 seconds have elapsed
+      // 1 second timer, counts 1000 milliseconds
+      timerCount1sec = timerCount1sec + 1;                                     // increment 2 second timer count
+      if (timerCount1sec > 1000) {                                             // if 2 seconds have elapsed
+         timerCount1sec = 0;                                                   // reset 2 second timer count
+         timeUp1sec = true;                                                    // indicate that 2 seconds have elapsed
       }
    
       // Mode pushbutton debounce and toggle
@@ -174,8 +174,8 @@ void loop()
                modePBDebounce = 0;                                             // reset debounce timer count
                robotModeIndex++;                                               // switch to next mode
                robotModeIndex = robotModeIndex & 7;                            // keep mode index between 0 and 7
-               timerCount3sec = 0;                                             // reset 3 second timer count
-               timeUp3sec = false;                                             // reset 3 second timer
+               timerCount10sec = 0;                                             // reset 3 second timer count
+               timeUp10sec = false;                                             // reset 3 second timer
             }
          }
       }
@@ -194,7 +194,7 @@ void loop()
             encoder[0].pos = 0;                                                // clear left encoder
             encoder[1].pos = 0;                                                // clear right encoder
             driveIndex = 0;                                                    // reset drive index
-            timeUp2sec = false;                                                // reset 2 second timer
+            timeUp1sec = false;                                                // reset 2 second timer
             break;
 
          case 1: // Run robot
@@ -215,8 +215,8 @@ void loop()
                Serial.println(pos[1]);
 #endif
                if (motorsEnabled) {                                            // run motors only if enabled
-                  if (timeUp5sec) {                                            // update drive state after 2 seconds
-                     timeUp5sec = false;                                       // reset 2 second timer
+                  if (timeUp1sec) {                                            // update drive state after 2 seconds
+                     timeUp1sec = false;                                       // reset 2 second timer
                      switch(driveIndex) {                                      // cycle through drive states
                         case 0: // Stop
                            setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);           // stop left motor
