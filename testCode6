@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include "Adafruit_TCS34725.h"
 
+
 #define SERVO_PIN_1 41 // Define the pin connected to the first servo motor
 #define SERVO_PIN_2 42 // Define the pin connected to the second servo motor
 #define SERVO_MIN_PULSE_WIDTH 544 // Minimum pulse width in microseconds
