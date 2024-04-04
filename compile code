@@ -592,27 +592,69 @@ void loop()
         
       }
        break ; 
+ 
+                         case 2: //drive forward 2 cm, must adjust distance
+                       setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                       setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                     robotIndex = 3;
+                       break;
+    
+                               case 3://moves servo 1 down
+                                moveServo(60, SERVO_PIN_1);
+                                robotIndex = 4;
+                                break;
+                                
 
-        case 2: //add your code to do something 
-                robotModeIndex = 0; //  !!!!!!!  remove if using the case
-                break;
+                              case 4: //checks if the stone is green
+                                if (tcsFlag) {
+                                  tcs.getRawData(&r, &g, &b, &c);
+                                  Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+                                }
+                                if (g > r || g == r) {
+                                  robotIndex = 5;
+                                }
+                                else{
+                                  robotIndex=2;
+                                }
+                                colourToStepperStartTime = millis();
+                                break;
 
-            case 3: //add your code to do something 
-                robotModeIndex = 0; //  !!!!!!!  remove if using the case
-                break;
+                              case 5: //stepper turns
+                                if (millis() - colourToStepperStartTime >= SERVO_TO_STEPPER_DELAY) {
+                                  stepperRunState = true;
+                                  stepDir = true;
+                                  digitalWrite(cDirPin, stepDir);
+                                  stepperStartTime = millis();
+                                  robotIndex = 6;
+                                }
+                                break;
 
-            case 4: //add your code to do something 
-                robotModeIndex = 0; //  !!!!!!!  remove if using the case
-                break;
+                              case 6: //servo 2 turns
+                                if (millis() - stepperStartTime >= STEPPER_DURATION) {
+                                  stepperRunState = false;
+                                  moveServo(180, SERVO_PIN_2);
+                                  robotIndex = 7;
+                                }
+                                break;
+                   
 
-            case 5: //add your code to do something 
-                robotModeIndex = 0; //  !!!!!!!  remove if using the case
-                break;
+                              case 7:
+                                stepperRunState = true;
+                                stepDir = false;
+                                digitalWrite(cDirPin, stepDir);
+                                stepperStartTime = millis();
+                                robotIndex = 8;
+                                break;
 
-            case 6: //add your code to do something 
-                robotModeIndex = 0; //  !!!!!!!  remove if using the case
-                break;      // Update brightness of heartbeat display on SmartLED
-      }
+                              case 8:
+                                if (millis() - stepperStartTime >= STEPPER_DURATION) {
+                                  stepperRunState = false;
+                                  moveServo(0, SERVO_PIN_2);
+                                }
+                                robotIndex = 0;
+                                /* if(timer90Up){
+                                  add servo 4 functionality to raise the collection container and deposit stones into the bin
+                                }  }
       displayTime++;                                                          // count milliseconds
       if (displayTime > cDisplayUpdate) {                                     // when display update period has passed
          displayTime = 0;                                                     // reset display counter
