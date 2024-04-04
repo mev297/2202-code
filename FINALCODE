@@ -96,7 +96,8 @@ Adafruit_TCS34725 tcs        = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS,
 bool tcsFlag                 = true;
 int pos1 = 0;
 int pos2 = 0;
-
+int pos3 = 0;
+int pos4 = 0;             
 hw_timer_t * pTimer;
 // Declare SK6812 SMART LED object
 //   Argument 1 = Number of LEDs (pixels) in use
@@ -334,24 +335,31 @@ void loop()
                             uint16_t r, g, b, c;
                             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
                             switch(robotIndex){
-                              case 0:
+                              case 0: //drive forward 2 cm, must adjust distance
+                                setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                                setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                                break;
                                 robotIndex = 1;
                                 break;
 
-                              case 1:
+                              case 1://moves servo 1 down
+                                moveServo(60, SERVO_PIN_1);
+                                servoToStepperStartTime = millis();
+                                robotIndex = 2;
+                                break;
+                                
+
+                              case 2: //checks if the stone is green
                                 if (tcsFlag) {
                                   tcs.getRawData(&r, &g, &b, &c);
                                   Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
                                 }
                                 if (g > r || g == r) {
-                                  robotIndex = 2;
+                                  robotIndex = 3;
                                 }
-                                break;
-
-                              case 2:
-                                moveServo(60, SERVO_PIN_1);
-                                servoToStepperStartTime = millis();
-                                robotIndex = 3;
+                                else{
+                                  robotIndex=0;
+                                }
                                 break;
 
                               case 3:
@@ -390,10 +398,14 @@ void loop()
                                   stepperRunState = false;
                                   moveServo(0, SERVO_PIN_2);
                                 }
+                                robotIndex = 0;
                                 break;
                            }
-                           driveIndex = 0;                                     // next state: stop
+                           
+                          driveIndex = 0;                                     // next state: stop
                            break;
+                           
+                           
                      }
                   }
                }
