@@ -1,4 +1,3 @@
-
 //importing libraries
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
@@ -10,6 +9,8 @@
 #define DEBUG_ENCODER_COUNT  1
 #define SERVO_PIN_1 41
 #define SERVO_PIN_2 42
+#define SERVO_PIN_3 9
+#define SERVO_PIN_4 10
 #define SERVO_MIN_PULSE_WIDTH 544
 #define SERVO_MAX_PULSE_WIDTH 2400
 #define SERVO_MIN_ANGLE 0
@@ -244,7 +245,11 @@ void loop()
             encoder[0].pos = 0;                                                // clear left encoder
             encoder[1].pos = 0;                                                // clear right encoder
             driveIndex = 0;                                                    // reset drive index
-            timeUp1sec = false;                                                // reset 2 second timer
+            timeUp1sec = false; 
+              
+            
+            uint16_t r, g, b, c;
+             digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));                                             // reset 2 second timer
             break;
 
          case 1: // Run robot
@@ -581,89 +586,6 @@ void loop()
                            driveIndex = 52;                                     // next state: drive forward
                            break;
                         
-                        //ADD SERVO CODE FOR OPENING, MUST MOVE 10 MORE SECONDS WHILE CHECKING A STONE EVERY SECOND
-                        case 52: // turn right
-                           setMotor(-1, driveSpeed, cIN1Chan[0], cIN2Chan[0]); // left motor reverse
-                           setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse
-                          
-                           if(numRep==0){//increase this value for showcase
-                            uint16_t r, g, b, c;
-                            digitalWrite(cTCSLED, !digitalRead(cLEDSwitch));
-                            switch(robotIndex){
-                              
-                                //ADD A CASE ABOVE THIS TO TURN THE THIRD SERVO
-                              case 0: //drive forward 2 cm, must adjust distance
-                                setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
-                                setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
-                                robotIndex = 1;
-                                break;
-
-                              case 1://moves servo 1 down
-                                moveServo(60, SERVO_PIN_1);
-                                robotIndex = 2;
-                                break;
-                                
-
-                              case 2: //checks if the stone is green
-                                if (tcsFlag) {
-                                  tcs.getRawData(&r, &g, &b, &c);
-                                  Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
-                                }
-                                if (g > r || g == r) {
-                                  robotIndex = 3;
-                                }
-                                else{
-                                  robotIndex=0;
-                                }
-                                colourToStepperStartTime = millis();
-                                break;
-
-                              case 3: //stepper turns
-                                if (millis() - colourToStepperStartTime >= SERVO_TO_STEPPER_DELAY) {
-                                  stepperRunState = true;
-                                  stepDir = true;
-                                  digitalWrite(cDirPin, stepDir);
-                                  stepperStartTime = millis();
-                                  robotIndex = 4;
-                                }
-                                break;
-
-                              case 4: //servo 2 turns
-                                if (millis() - stepperStartTime >= STEPPER_DURATION) {
-                                  stepperRunState = false;
-                                  moveServo(180, SERVO_PIN_2);
-                                  robotIndex = 5;
-                                }
-                                break;
-                   
-
-                              case 5:
-                                stepperRunState = true;
-                                stepDir = false;
-                                digitalWrite(cDirPin, stepDir);
-                                stepperStartTime = millis();
-                                robotIndex = 6;
-                                break;
-
-                              case 6:
-                                if (millis() - stepperStartTime >= STEPPER_DURATION) {
-                                  stepperRunState = false;
-                                  moveServo(0, SERVO_PIN_2);
-                                }
-                                robotIndex = 0;
-                                /* if(timer90Up){
-                                  add servo 4 functionality to raise the collection container and deposit stones into the bin
-                                }
-                                */
-
-                                break;
-                           }
-                           
-                          driveIndex = 0;                                     // next state: stop
-                           break;
-                           
-                           
-                     }
                   }
                }
             }
@@ -671,9 +593,87 @@ void loop()
                setMotor(0, 0, cIN1Chan[0], cIN2Chan[0]);                      // stop left motor
                setMotor(0, 0, cIN1Chan[1], cIN2Chan[1]);                      // stop right motor
             }
-            break;
-      }
-      // Update brightness of heartbeat display on SmartLED
+          }
+         
+      
+       
+ 
+                       
+                       case 2: //drive forward 2 cm, must adjust distance
+                       moveServo(90, SERVO_PIN_3);
+                       break;
+
+                       case 3: //drive forward 2 cm, must adjust distance
+                       numRep++;
+                       setMotor(1, driveSpeed, cIN1Chan[0], cIN2Chan[0]);  // left motor forward
+                       setMotor(-1, driveSpeed, cIN1Chan[1], cIN2Chan[1]); // right motor reverse (opposite dir from left)
+                       robotIndex = 3;
+                       break;
+    
+                               case 4://moves servo 1 down
+                                moveServo(60, SERVO_PIN_1);
+                                robotIndex = 4;
+                                break;
+                                
+
+                              case 5: //checks if the stone is green
+                                if (tcsFlag) {
+                                  tcs.getRawData(&r, &g, &b, &c);
+                                  Serial.printf("R: %d, G: %d, B: %d, C %d\n", r, g, b, c);
+                                }
+                                if (g > r || g == r) {
+                                  robotIndex = 5;
+                                }
+                                else{
+                                  robotIndex=2;
+                                }
+                                colourToStepperStartTime = millis();
+                                break;
+
+                              case 6: //stepper turns
+                                if (millis() - colourToStepperStartTime >= SERVO_TO_STEPPER_DELAY) {
+                                  stepperRunState = true;
+                                  stepDir = true;
+                                  digitalWrite(cDirPin, stepDir);
+                                  stepperStartTime = millis();
+                                  robotIndex = 6;
+                                }
+                                break;
+
+                              case 7: //servo 2 turns
+                                if (millis() - stepperStartTime >= STEPPER_DURATION) {
+                                  stepperRunState = false;
+                                  moveServo(180, SERVO_PIN_2);
+                                  robotIndex = 7;
+                                }
+                                break;
+                   
+
+                              case 8:
+                                stepperRunState = true;
+                                stepDir = false;
+                                digitalWrite(cDirPin, stepDir);
+                                stepperStartTime = millis();
+                                robotIndex = 8;
+                                break;
+
+                              case 9:
+                                if (millis() - stepperStartTime >= STEPPER_DURATION) {
+                                  stepperRunState = false;
+                                  moveServo(0, SERVO_PIN_2);
+                                }
+                                if(numRep<=10){
+                                  robotIndex = 3;
+                                }
+                                else{
+                                  break;
+                                }
+
+                              case 10:
+                              moveServo(90, SERVO_PIN_4);
+                              break;
+
+                              
       displayTime++;                                                          // count milliseconds
       if (displayTime > cDisplayUpdate) {                                     // when display update period has passed
          displayTime = 0;                                                     // reset display counter
@@ -686,7 +686,7 @@ void loop()
       }
    }
 }   
-}
+
 // Set colour of Smart LED depending on robot mode (and update brightness)
 void Indicator() {
   SmartLEDs.setPixelColor(0, modeIndicator[robotModeIndex]);                  // set pixel colors to = mode 
