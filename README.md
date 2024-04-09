@@ -3,4 +3,5 @@ The stepper sub system can be found in "stepper motor code updated", and the ser
 All other files are intermediate steps.
 
 Files starting with Testcode Or Democode are iterations of our final code, mean to be used to track versions fo teh chanegs we make throughout our testing process. 
+Seperate component code are are seperate files named after eahc one of them. 
 
